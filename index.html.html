@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BR Recovery System - Conectado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        primary: '#ee4d2d', 
+                        primaryHover: '#d73211',
+                        secondary: '#2563eb', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; }
+        .nav-active { background-color: rgba(238, 77, 45, 0.1); color: #ee4d2d; border-right: 3px solid #ee4d2d; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden text-sm">
+
+    <!-- OVERLAY DE CARREGAMENTO (IMPORTANTE) -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p class="text-white font-bold animate-pulse">Sincronizando com Google Sheets...</p>
+        </div>
+    </div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center">
+        <div class="absolute inset-0 bg-gray-900/90 backdrop-blur-sm"></div>
+        <div class="relative z-10 w-full max-w-md p-8 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 fade-in">
+            <div class="text-center mb-8">
+                <i class="fas fa-cloud-upload-alt text-4xl text-primary mb-4"></i>
+                <h1 class="text-3xl font-bold text-white">BR Recovery</h1>
+                <p class="text-gray-400 mt-2">Sistema Conectado</p>
+            </div>
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-500 mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-primary outline-none" placeholder="admin@shopee.com" required>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Senha</label>
+                    <input type="password" id="loginPassword" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-primary outline-none" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3 rounded-lg transition shadow-lg">ACESSAR</button>
+            </form>
+            <p class="mt-4 text-center text-xs text-gray-500">Seus dados serão carregados da planilha.</p>
+        </div>
+    </div>
+
+    <!-- SISTEMA PRINCIPAL -->
+    <div id="mainSystem" class="hidden flex h-screen bg-darkBg">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between shadow-xl relative z-20">
+            <div>
+                <div class="h-16 flex items-center gap-3 px-6 border-b border-gray-800">
+                    <i class="fas fa-box-open text-primary text-xl"></i>
+                    <span class="font-bold text-lg text-white">BR ADMIN</span>
+                </div>
+                <nav class="mt-6 space-y-1 px-3">
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                        <i class="fas fa-chart-pie w-5"></i> Dashboard
+                    </button>
+                    <button onclick="navigate('records')" id="nav-records" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                        <i class="fas fa-clipboard-list w-5"></i> Registros BR
+                    </button>
+                    <div id="adminMenuSection" class="hidden">
+                        <button onclick="navigate('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                            <i class="fas fa-users-cog w-5"></i> Usuários
+                        </button>
+                    </div>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-gray-800 bg-gray-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-white shadow-md">
+                        <span id="userInitial">U</span>
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-sm font-bold text-white truncate" id="userNameDisplay">Usuario</p>
+                        <p class="text-xs text-gray-500 truncate" id="userRoleDisplay">Cargo</p>
+                    </div>
+                    <button onclick="logout()" class="text-gray-500 hover:text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-darkBg relative">
+            <header class="bg-gray-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800 px-8 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-white" id="pageTitle">Visão Geral</h2>
+                <div class="text-xs text-green-500 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online (Google Sheets)
+                </div>
+            </header>
+
+            <div class="p-8 max-w-7xl mx-auto space-y-8 fade-in">
+                
+                <!-- DASHBOARD -->
+                <div id="view-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Total BRs</p>
+                            <h3 class="text-3xl font-bold text-white mt-2" id="kpiTotal">0</h3>
+                        </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Recuperados</p>
+                            <h3 class="text-3xl font-bold text-green-400 mt-2" id="kpiRecovered">0</h3>
+                        </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Perdidos</p>
+                            <h3 class="text-3xl font-bold text-red-400 mt-2" id="kpiLost">0</h3>
+                        </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Custo (Perdas)</p>
+                            <h3 class="text-2xl font-bold text-white mt-2" id="kpiCost">R$ 0,00</h3>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <h3 class="text-white font-bold mb-4">Volume Mensal</h3>
+                            <div class="h-64"><canvas id="chartEvolution"></canvas></div>
+                        </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <h3 class="text-white font-bold mb-4">Status</h3>
+                            <div class="h-64"><canvas id="chartStatus"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTROS -->
+                <div id="view-records" class="hidden space-y-6">
+                    <div class="flex justify-between items-center bg-cardBg p-4 rounded-xl border border-gray-700">
+                        <div class="flex gap-4 flex-1">
+                            <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR ou Estação..." class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm w-full max-w-xs">
+                            <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
+                                <option value="all">Todos</option>
+                                <option value="recuperado">Recuperado</option>
+                                <option value="perdido">Perdido</option>
+                            </select>
+                        </div>
+                        <button onclick="openRecordModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Novo
+                        </button>
+                    </div>
+
+                    <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-900 text-xs uppercase font-bold text-gray-300">
+                                <tr>
+                                    <th class="px-6 py-4">BR ID</th>
+                                    <th class="px-6 py-4">Estação</th>
+                                    <th class="px-6 py-4">Categoria</th>
+                                    <th class="px-6 py-4">Custo</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                        <div id="emptyState" class="p-8 text-center hidden">
+                            <p class="text-gray-500">Nenhum registro encontrado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USUÁRIOS -->
+                <div id="view-users" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-white">Usuários do Sistema</h2>
+                        <button onclick="openUserModal()" class="bg-secondary text-white px-4 py-2 rounded-lg text-sm">Novo Usuário</button>
+                    </div>
+                    <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-900 text-xs uppercase text-gray-300">
+                                <tr>
+                                    <th class="px-6 py-4">Nome</th>
+                                    <th class="px-6 py-4">Email</th>
+                                    <th class="px-6 py-4">Perfil</th>
+                                    <th class="px-6 py-4">Estação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Modal Registro -->
+    <div id="recordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-gray-800 rounded-xl w-full max-w-lg border border-gray-700 p-6">
+            <h3 class="text-lg font-bold text-white mb-4" id="modalRecordTitle">Registro</h3>
+            <form id="recordForm" class="space-y-4">
+                <input type="hidden" id="recId">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="recBr" class="bg-gray-900 border border-gray-600 rounded p-2 text-white uppercase" placeholder="BR ID" required>
+                    <select id="recCategory" class="bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        <option>Eletrônicos</option><option>Moda</option><option>Casa</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" step="0.01" id="recCost" class="bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Custo" required>
+                    <input type="date" id="recDate" class="bg-gray-900 border border-gray-600 rounded p-2 text-white" required>
+                </div>
+                <div class="flex gap-4 text-white">
+                    <label><input type="radio" name="recStatus" value="recuperado" checked> Recuperado</label>
+                    <label><input type="radio" name="recStatus" value="perdido"> Perdido</label>
+                </div>
+                <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Estação">
+                
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeModal('recordModal')" class="text-gray-400">Cancelar</button>
+                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal User -->
+    <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-gray-800 rounded-xl w-full max-w-md border border-gray-700 p-6">
+            <h3 class="text-lg font-bold text-white mb-4">Novo Usuário</h3>
+            <form id="userForm" class="space-y-4">
+                <input type="text" id="uName" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Nome" required>
+                <input type="email" id="uEmail" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Email" required>
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="uRole" class="bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        <option value="ADM">ADM</option><option value="Analista">Analista</option><option value="Auxiliar">Auxiliar</option>
+                    </select>
+                    <input type="text" id="uStation" class="bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Estação">
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeModal('userModal')" class="text-gray-400">Cancelar</button>
+                    <button type="submit" class="bg-secondary text-white px-4 py-2 rounded">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LÓGICA DO SISTEMA -->
+    <script>
+        // ==========================================================
+        //  CONFIGURAÇÃO DA API (COLE SUA URL ABAIXO DENTRO DAS ASPAS)
+        // ==========================================================
+        const API_URL = "COLE_SUA_URL_DO_GOOGLE_AQUI"; 
+        // Exemplo: const API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
+
+
+        // --- ESTADO ---
+        let currentUser = null;
+        let localData = { records: [], users: [] };
+        let chartInstances = {};
+
+        // --- COMUNICAÇÃO COM GOOGLE ---
+        async function apiCall(data = null) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                const options = data ? { method: 'POST', body: JSON.stringify(data) } : {};
+                const response = await fetch(API_URL, options);
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao conectar com Google Sheets. Verifique a URL no código.');
+                return null;
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        async function initSystem() {
+            const data = await apiCall(); // Busca tudo (GET)
+            if(data && data.status === 'success') {
+                localData.records = data.records;
+                localData.users = data.users;
+            }
+        }
+
+        // --- LOGIN ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Verifica URL antes de tentar
+            if(API_URL.includes("https://script.google.com/a/macros/shopee.com/s/AKfycbyEsXleClxT4IgZAW59ydMUh519Tw3E4WgorSiYKVAPV_gwqIOGw2xdU-PsMQ2eCeI3uw/exec")) {
+                alert("ERRO: Você esqueceu de colar a URL do Apps Script no código HTML (Passo 4).");
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElement
