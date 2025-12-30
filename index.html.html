@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BR Recovery System - Conectado</title>
+    
+    <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Biblioteca do Leitor de QR Code (IMPORTANTE) -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <script>
         tailwind.config = {
@@ -36,7 +40,7 @@
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden text-sm">
 
-    <!-- OVERLAY DE CARREGAMENTO (IMPORTANTE) -->
+    <!-- OVERLAY DE CARREGAMENTO -->
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div class="text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -216,25 +220,55 @@
             <h3 class="text-lg font-bold text-white mb-4" id="modalRecordTitle">Registro</h3>
             <form id="recordForm" class="space-y-4">
                 <input type="hidden" id="recId">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="recBr" class="bg-gray-900 border border-gray-600 rounded p-2 text-white uppercase" placeholder="BR ID" required>
-                    <select id="recCategory" class="bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        <option>Eletrônicos</option><option>Moda</option><option>Casa</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" step="0.01" id="recCost" class="bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Custo" required>
-                    <input type="date" id="recDate" class="bg-gray-900 border border-gray-600 rounded p-2 text-white" required>
-                </div>
-                <div class="flex gap-4 text-white">
-                    <label><input type="radio" name="recStatus" value="recuperado" checked> Recuperado</label>
-                    <label><input type="radio" name="recStatus" value="perdido"> Perdido</label>
-                </div>
-                <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Estação">
                 
-                <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModal('recordModal')" class="text-gray-400">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Salvar</button>
+                <!-- Bloco do Scanner (NOVO) -->
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Código BR *</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="recBr" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white uppercase font-mono focus:border-primary outline-none" placeholder="BR..." required>
+                        <button type="button" onclick="startScanner()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 rounded-lg border border-gray-600 transition" title="Abrir Câmera">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                    </div>
+                    <!-- Área onde a câmera aparece -->
+                    <div id="reader" class="mt-2 hidden rounded-lg overflow-hidden border-2 border-primary shadow-lg"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Categoria</label>
+                        <select id="recCategory" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                            <option>Eletrônicos</option><option>Moda</option><option>Casa</option><option>Beleza</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Data</label>
+                        <input type="date" id="recDate" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Custo (R$)</label>
+                        <input type="number" step="0.01" id="recCost" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="0.00" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Estação</label>
+                        <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" placeholder="Estação">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-500 mb-1">Status</label>
+                    <div class="flex gap-4 text-white">
+                        <label class="flex items-center gap-2"><input type="radio" name="recStatus" value="recuperado" checked class="accent-green-500"> Recuperado</label>
+                        <label class="flex items-center gap-2"><input type="radio" name="recStatus" value="perdido" class="accent-red-500"> Perdido</label>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
+                    <button type="button" onclick="closeModal('recordModal')" class="text-gray-400 hover:text-white px-4">Cancelar</button>
+                    <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded">Salvar</button>
                 </div>
             </form>
         </div>
@@ -266,10 +300,8 @@
         // ==========================================================
         //  CONFIGURAÇÃO DA API (COLE SUA URL ABAIXO DENTRO DAS ASPAS)
         // ==========================================================
-        const API_URL = "COLE_SUA_URL_DO_GOOGLE_AQUI"; 
-        // Exemplo: const API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
-
-
+        const API_URL = "https://script.google.com/a/macros/shopee.com/s/AKfycbyEsXleClxT4IgZAW59ydMUh519Tw3E4WgorSiYKVAPV_gwqIOGw2xdU-PsMQ2eCeI3uw/exec"; 
+        
         // --- ESTADO ---
         let currentUser = null;
         let localData = { records: [], users: [] };
@@ -285,7 +317,7 @@
                 return json;
             } catch (error) {
                 console.error(error);
-                alert('Erro ao conectar com Google Sheets. Verifique a URL no código.');
+                alert('Erro ao conectar com Google Sheets. Verifique a URL no código ou sua internet.');
                 return null;
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
@@ -305,12 +337,246 @@
             e.preventDefault();
             
             // Verifica URL antes de tentar
-            if(API_URL.includes("https://script.google.com/a/macros/shopee.com/s/AKfycbyEsXleClxT4IgZAW59ydMUh519Tw3E4WgorSiYKVAPV_gwqIOGw2xdU-PsMQ2eCeI3uw/exec")) {
-                alert("ERRO: Você esqueceu de colar a URL do Apps Script no código HTML (Passo 4).");
+            if(API_URL.includes("COLE_SUA_URL")) {
+                alert("ERRO: Você esqueceu de colar a URL do Apps Script no código HTML.");
                 return;
             }
 
             const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
 
-            const pass = document.getElement
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            await initSystem(); // Carrega dados frescos
+
+            // Procura usuário
+            const user = localData.users.find(u => u.email === email && String(u.password) === String(pass));
+
+            if (user) {
+                currentUser = user;
+                // UI Update
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainSystem').classList.remove('hidden');
+                document.getElementById('userNameDisplay').textContent = currentUser.name;
+                document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
+                document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
+                
+                if(currentUser.role === 'ADM') document.getElementById('adminMenuSection').classList.remove('hidden');
+                
+                navigate('dashboard');
+            } else {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                alert('Login inválido! Verifique a aba "Usuarios" na planilha.');
+            }
+        });
+
+        function logout() { location.reload(); }
+
+        // --- NAVEGAÇÃO ---
+        function navigate(view) {
+            ['dashboard', 'records', 'users'].forEach(id => {
+                document.getElementById('view-'+id).classList.add('hidden');
+                document.getElementById('nav-'+id)?.classList.remove('nav-active', 'bg-gray-800', 'text-white');
+            });
+            document.getElementById('view-'+view).classList.remove('hidden');
+            document.getElementById('nav-'+view)?.classList.add('nav-active', 'bg-gray-800', 'text-white');
             
+            if(view === 'dashboard') renderDashboard();
+            if(view === 'records') renderTable();
+            if(view === 'users') renderUsers();
+        }
+
+        // --- REGISTROS ---
+        function renderTable() {
+            let recs = localData.records;
+            const term = document.getElementById('searchFilter').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+
+            // Filtro Permissão
+            if(currentUser.role === 'Auxiliar') {
+                recs = recs.filter(r => r.createdBy == currentUser.id || r.station === currentUser.station);
+            }
+            // Filtro Busca
+            recs = recs.filter(r => {
+                return (String(r.br).toLowerCase().includes(term) || String(r.station).toLowerCase().includes(term)) &&
+                       (status === 'all' || r.status === status);
+            });
+
+            const tbody = document.getElementById('recordsTableBody');
+            tbody.innerHTML = '';
+            
+            if(recs.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('emptyState').classList.add('hidden');
+
+            recs.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            recs.forEach(r => {
+                const isRec = r.status === 'recuperado';
+                tbody.innerHTML += `
+                <tr class="hover:bg-gray-800/50 border-b border-gray-800">
+                    <td class="px-6 py-4 font-bold text-white font-mono">${r.br}</td>
+                    <td class="px-6 py-4">${r.station}</td>
+                    <td class="px-6 py-4 text-xs">${r.category}</td>
+                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(r.cost).toFixed(2)}</td>
+                    <td class="px-6 py-4"><span class="${isRec ? 'text-green-400' : 'text-red-400'}">${isRec ? 'Recuperado' : 'Perdido'}</span></td>
+                    <td class="px-6 py-4 text-center">
+                        ${currentUser.role !== 'Auxiliar' ? `<button onclick="editRecord(${r.id})" class="text-blue-500 mr-3"><i class="fas fa-edit"></i></button>` : ''}
+                        ${currentUser.role === 'ADM' ? `<button onclick="deleteRecord(${r.id})" class="text-red-500"><i class="fas fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>`;
+            });
+        }
+
+        // Salvar (Adicionar/Editar)
+        document.getElementById('recordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('recId').value;
+            const payload = {
+                action: 'SAVE_RECORD',
+                id: id ? id : Date.now(),
+                br: document.getElementById('recBr').value.toUpperCase(),
+                cost: document.getElementById('recCost').value,
+                date: document.getElementById('recDate').value,
+                status: document.querySelector('input[name="recStatus"]:checked').value,
+                category: document.getElementById('recCategory').value,
+                station: document.getElementById('recStation').value || 'HQ',
+                createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
+            };
+
+            const res = await apiCall(payload);
+            if(res.status === 'success') {
+                await initSystem();
+                closeModal('recordModal');
+                renderTable();
+                alert('Salvo com sucesso!');
+            }
+        });
+
+        async function deleteRecord(id) {
+            if(confirm('Excluir registro?')) {
+                const res = await apiCall({ action: 'DELETE_RECORD', id: id });
+                if(res.status === 'success') { await initSystem(); renderTable(); }
+            }
+        }
+
+        // --- USERS ---
+        function renderUsers() {
+            document.getElementById('usersTableBody').innerHTML = localData.users.map(u => `
+                <tr class="hover:bg-gray-800 border-b border-gray-800">
+                    <td class="px-6 py-4 text-white">${u.name}</td>
+                    <td class="px-6 py-4">${u.email}</td>
+                    <td class="px-6 py-4 text-xs bg-gray-900">${u.role}</td>
+                    <td class="px-6 py-4">${u.station}</td>
+                </tr>`).join('');
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                action: 'ADD_USER', id: Date.now(),
+                name: document.getElementById('uName').value,
+                email: document.getElementById('uEmail').value,
+                password: '123',
+                role: document.getElementById('uRole').value,
+                station: document.getElementById('uStation').value
+            };
+            const res = await apiCall(payload);
+            if(res.status === 'success') { await initSystem(); closeModal('userModal'); renderUsers(); alert('Usuário criado (Senha: 123)'); }
+        });
+
+        // --- DASHBOARD ---
+        function renderDashboard() {
+            const recs = localData.records;
+            const total = recs.length;
+            const rec = recs.filter(r => r.status === 'recuperado').length;
+            const lost = total - rec;
+            const cost = recs.reduce((acc, r) => r.status === 'perdido' ? acc + parseFloat(r.cost) : acc, 0);
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiRecovered').textContent = rec;
+            document.getElementById('kpiLost').textContent = lost;
+            document.getElementById('kpiCost').textContent = `R$ ${cost.toFixed(2)}`;
+
+            // Gráficos Simplificados
+            if(chartInstances.status) chartInstances.status.destroy();
+            chartInstances.status = new Chart(document.getElementById('chartStatus'), {
+                type: 'doughnut',
+                data: { labels: ['Ok', 'Perda'], datasets: [{ data: [rec, lost], backgroundColor: ['#22c55e', '#ef4444'], borderWidth:0 }] },
+                options: { cutout: '70%', plugins:{legend:{display:false}} }
+            });
+
+            if(chartInstances.evo) chartInstances.evo.destroy();
+            chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
+                type: 'line',
+                data: { labels: ['1', '2', '3', '4', '5'], datasets: [{ label:'BRs', data: [rec*0.5, rec*0.8, rec, rec*0.9, rec], borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] },
+                options: { plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}} }
+            });
+        }
+
+        // --- UTILS ---
+        function openRecordModal(id=null) {
+            document.getElementById('recordForm').reset();
+            document.getElementById('recId').value = '';
+            
+            // Força a data de hoje ao abrir novo
+            document.getElementById('recDate').valueAsDate = new Date();
+
+            if(id) {
+                const r = localData.records.find(x => x.id == id);
+                document.getElementById('recId').value = r.id;
+                document.getElementById('recBr').value = r.br;
+                document.getElementById('recCost').value = r.cost;
+                document.getElementById('recDate').value = r.date;
+                document.getElementById('recStation').value = r.station;
+                const radios = document.getElementsByName('recStatus');
+                for(let rd of radios) if(rd.value === r.status) rd.checked = true;
+            } else {
+                if(currentUser.station !== 'HQ') document.getElementById('recStation').value = currentUser.station;
+            }
+            document.getElementById('recordModal').classList.remove('hidden');
+        }
+        window.editRecord = openRecordModal;
+        function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
+        
+        
+        // --- LÓGICA DO SCANNER ---
+        let html5QrcodeScanner;
+
+        function startScanner() {
+           const readerDiv = document.getElementById('reader');
+           readerDiv.classList.remove('hidden');
+           
+           html5QrcodeScanner = new Html5Qrcode("reader");
+           html5QrcodeScanner.start(
+               { facingMode: "environment" }, // Usa câmera traseira
+               { fps: 10, qrbox: { width: 250, height: 250 } },
+               (decodedText) => {
+                   document.getElementById('recBr').value = decodedText;
+                   new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play();
+                   stopScanner();
+               },
+               (errorMessage) => { /* ignora erros de frame */ }
+           ).catch(err => {
+               alert("Erro ao abrir câmera. Permita o acesso: " + err);
+           });
+        }
+
+        function stopScanner() {
+           if(html5QrcodeScanner) {
+               html5QrcodeScanner.stop().then(() => {
+                   document.getElementById('reader').classList.add('hidden');
+                   html5QrcodeScanner.clear();
+               }).catch(err => console.log(err));
+           }
+        }
+        
+        function closeModal(id) { 
+           if(id === 'recordModal') stopScanner();
+           document.getElementById(id).classList.add('hidden'); 
+        }
+
+    </script>
+</body>
+</html>
