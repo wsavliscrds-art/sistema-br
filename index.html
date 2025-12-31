@@ -419,7 +419,7 @@
             
             await initSystem();
             const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
+            const pass = document.getElementById('loginPassword').value;
             const user = localData.users.find(u => String(u.email).toLowerCase() === email.toLowerCase() && String(u.password) === String(pass));
 
             if (user) {
@@ -795,3 +795,4 @@
     </script>
 </body>
 </html>
+
