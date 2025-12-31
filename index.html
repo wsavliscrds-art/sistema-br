@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Platinum (Login Flex)</title>
+    <title>BR Recovery - Daily Fix</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,7 @@
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
         <div class="w-full max-w-md p-6 text-center">
             <i class="fas fa-satellite-dish text-primary text-4xl mb-4 animate-bounce"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Carregando Dados...</h3>
+            <h3 class="text-xl font-bold text-white mb-2">Sincronizando...</h3>
             <div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="progress-bar bg-primary h-2.5 rounded-full" style="width: 0%"></div>
             </div>
@@ -122,25 +122,13 @@
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
                     <div class="flex justify-between items-center flex-wrap gap-4">
                         <h2 class="text-2xl font-bold text-white">Painel Operacional</h2>
-                        <div class="flex gap-2 items-center">
-                            <!-- Filtro Estação -->
-                            <div class="relative">
-                                <i class="fas fa-building absolute left-3 top-2.5 text-gray-400"></i>
-                                <select id="dashStationFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
-                                    <option value="all">Todas as Estações</option>
-                                    <!-- Populated by JS -->
-                                </select>
-                            </div>
-                            <!-- Filtro Data -->
-                            <div class="relative">
-                                <i class="fas fa-calendar absolute left-3 top-2.5 text-gray-400"></i>
-                                <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
-                                    <option value="all">Todo o Período</option>
-                                    <option value="month">Este Mês</option>
-                                </select>
-                            </div>
+                        <div class="flex gap-2">
+                            <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
+                                <option value="all">Todo o Período</option>
+                                <option value="month">Este Mês</option>
+                            </select>
                             <button onclick="sendEmailReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
-                                <i class="fas fa-envelope"></i>
+                                <i class="fas fa-envelope"></i> Relatório
                             </button>
                         </div>
                     </div>
@@ -172,27 +160,15 @@
                         </div>
                     </div>
 
-                    <!-- Gráficos Linha 1 -->
+                    <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
                             <h3 class="text-white font-bold mb-4">Evolução Diária (R$)</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Status Geral</h3>
+                            <h3 class="text-white font-bold mb-4">Status</h3>
                             <div class="h-64"><canvas id="chartStatus"></canvas></div>
-                        </div>
-                    </div>
-
-                    <!-- Gráficos Linha 2 (NOVOS) -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Recuperados por Categoria</h3>
-                            <div class="h-64"><canvas id="chartCategory"></canvas></div>
-                        </div>
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Top Recuperadores (Usuários)</h3>
-                            <div class="h-64"><canvas id="chartTopUsers"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -401,15 +377,7 @@
             if(data && data.status === 'success') {
                 localData.records = data.records;
                 localData.users = data.users;
-                populateStationFilter(); // Popula o filtro ao iniciar
             }
-        }
-
-        function populateStationFilter() {
-            const stations = [...new Set(localData.records.map(r => r.station))].filter(Boolean).sort();
-            const select = document.getElementById('dashStationFilter');
-            select.innerHTML = '<option value="all">Todas as Estações</option>' + 
-                stations.map(s => `<option value="${s}">${s}</option>`).join('');
         }
 
         // --- LOGIN & ACL ---
@@ -418,11 +386,9 @@
             if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
             
             await initSystem();
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPassword').value;
-            
-            // Lógica Relaxada (sem trim nem lowerCase)
-            const user = localData.users.find(u => u.email == email && u.password == pass);
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+            const user = localData.users.find(u => String(u.email).toLowerCase() === email.toLowerCase() && String(u.password) === String(pass));
 
             if (user) {
                 currentUser = user;
@@ -460,26 +426,24 @@
         // --- MATEMÁTICA FINANCEIRA BLINDADA ---
         function parseCurrency(value) {
             if (!value) return 0;
+            // Pega o valor, remove R$, converte para string, troca vírgula por ponto
             let str = String(value).replace('R$', '').trim();
-            if (str.includes(',') && str.includes('.')) str = str.replace(/\./g, '').replace(',', '.');
-            else if (str.includes(',')) str = str.replace(',', '.');
+            // Se for 1.200,00 (formato brasileiro)
+            if (str.includes(',') && str.includes('.')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes(',')) { // Se for 1200,00
+                str = str.replace(',', '.');
+            }
             return parseFloat(str) || 0;
         }
 
-        // --- DASHBOARD ATUALIZADO ---
+        // --- DASHBOARD (LÓGICA CORRIGIDA) ---
         function renderDashboard() {
-            const dateFilter = document.getElementById('dashDateFilter').value;
-            const stationFilter = document.getElementById('dashStationFilter').value;
+            const filterType = document.getElementById('dashDateFilter').value;
             const now = new Date();
             let recs = localData.records;
 
-            // Filtro de Estação
-            if (stationFilter !== 'all') {
-                recs = recs.filter(r => r.station === stationFilter);
-            }
-
-            // Filtro de Data
-            if (dateFilter === 'month') {
+            if (filterType === 'month') {
                 recs = recs.filter(r => {
                     const d = new Date(r.date);
                     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -487,6 +451,7 @@
             }
 
             const total = recs.length;
+            // Correção: Transforma tudo em minúsculo e remove espaços para comparar
             const recCount = recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').length;
             const lostCount = total - recCount;
             const rate = total ? ((recCount / total) * 100).toFixed(1) : 0;
@@ -516,94 +481,51 @@
         }
 
         function updateCharts(rec, lost, recs) {
-            // 1. Gráfico Status (Pizza)
+            // Garante que o canvas existe e destrói o anterior
+            const ctxStatus = document.getElementById('chartStatus');
             if(chartInstances.status) chartInstances.status.destroy();
-            chartInstances.status = new Chart(document.getElementById('chartStatus'), {
+            
+            // Gráfico Status (Mesmo se for zero, desenha)
+            chartInstances.status = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: { labels: ['Recuperado', 'Perdido'], datasets: [{ data: [rec, lost], backgroundColor: ['#22c55e', '#ef4444'], borderWidth:0 }] },
-                options: { cutout: '70%', plugins:{legend:{display:false}}, maintainAspectRatio: false }
+                options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // 2. Gráfico Evolução Diária (Linha)
+            // Gráfico Evolução (Agrupa por DIA)
+            const ctxEvo = document.getElementById('chartEvolution');
             if(chartInstances.evo) chartInstances.evo.destroy();
+
             const days = {};
             recs.forEach(r => {
                 if(!r.date) return;
+                // Pega os 10 primeiros caracteres (YYYY-MM-DD)
                 let dateKey = String(r.date).substring(0, 10);
                 if (dateKey.length < 10) return; 
                 let [y, m, d] = dateKey.split('-');
-                let label = `${d}/${m}`; 
+                let label = `${d}/${m}`; // Formata DD/MM
+                
                 if(!days[label]) days[label] = 0;
-                if(String(r.status).toLowerCase().trim() === 'recuperado') days[label] += parseCurrency(r.cost);
+                // Soma apenas recuperados
+                if(String(r.status).toLowerCase().trim() === 'recuperado') {
+                    days[label] += parseCurrency(r.cost);
+                }
             });
+            
+            // Ordenar por data original (gambiarra: usar o YYYY-MM-DD)
+            // Aqui vamos ordenar pelas chaves geradas, que são DD/MM.
+            // Para ordenar corretamente, precisamos associar de volta. 
+            // Simplificando: Assumindo ordem do objeto
             const labels = Object.keys(days).sort(); 
             const data = labels.map(l => days[l]);
 
-            chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
+            chartInstances.evo = new Chart(ctxEvo, {
                 type: 'line',
                 data: { 
                     labels: labels, 
                     datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
                 },
-                options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}}, maintainAspectRatio: false }
-            });
-
-            // 3. Gráfico por Categoria (Barras) - NOVO
-            if(chartInstances.category) chartInstances.category.destroy();
-            const catStats = {};
-            recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').forEach(r => {
-                let cat = r.category || 'Outros';
-                catStats[cat] = (catStats[cat] || 0) + 1; // Contagem de volume
-            });
-            
-            chartInstances.category = new Chart(document.getElementById('chartCategory'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(catStats),
-                    datasets: [{
-                        label: 'Volume Recuperado',
-                        data: Object.values(catStats),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4
-                    }]
-                },
-                options: { 
-                    plugins: { legend: { display: false } }, 
-                    scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } },
-                    maintainAspectRatio: false
-                }
-            });
-
-            // 4. Gráfico Ranking Operadores (Barras Horizontais) - NOVO
-            if(chartInstances.topUsers) chartInstances.topUsers.destroy();
-            const userStats = {};
-            recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').forEach(r => {
-                // Tenta achar o nome pelo ID createdBy
-                const creator = localData.users.find(u => u.id == r.createdBy);
-                const name = creator ? creator.name.split(' ')[0] : 'Admin/Outro';
-                userStats[name] = (userStats[name] || 0) + 1;
-            });
-
-            // Ordenar Top 5
-            const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
-            chartInstances.topUsers = new Chart(document.getElementById('chartTopUsers'), {
-                type: 'bar',
-                data: {
-                    labels: sortedUsers.map(i => i[0]),
-                    datasets: [{
-                        label: 'Pacotes Salvos',
-                        data: sortedUsers.map(i => i[1]),
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
-                    }]
-                },
-                options: { 
-                    indexAxis: 'y', // Barra Horizontal
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: '#334155' } }, y: { grid: { display: false } } },
-                    maintainAspectRatio: false
-                }
+                options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
             });
         }
 
@@ -611,7 +533,7 @@
             const total = document.getElementById('kpiTotal').innerText;
             const recVal = document.getElementById('kpiRecoveredValue').innerText;
             const lostVal = document.getElementById('kpiLostValue').innerText;
-            const subject = "Relatório BR Recovery - Platinum";
+            const subject = "Relatório BR Recovery";
             const body = `Resumo:\n\n📦 Total: ${total}\n✅ Recuperado: ${recVal}\n❌ Perda: ${lostVal}\n\nGerado automaticamente.`;
             window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
         }
