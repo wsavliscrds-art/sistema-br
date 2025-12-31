@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Diamond Plus</title>
+    <title>BR Recovery - Final Fix</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,25 +36,19 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Animação da Barra de Progresso */
         .progress-bar { transition: width 0.4s ease; }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden text-sm">
 
-    <!-- LOADING COM BARRA DE PROGRESSO -->
+    <!-- LOADING -->
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
         <div class="w-full max-w-md p-6 text-center">
             <i class="fas fa-satellite-dish text-primary text-4xl mb-4 animate-bounce"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Sincronizando Dados...</h3>
-            <p class="text-gray-400 text-xs mb-4">Conectando com Google Sheets</p>
-            
-            <!-- Barra -->
+            <h3 class="text-xl font-bold text-white mb-2">Sincronizando...</h3>
             <div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="progress-bar bg-primary h-2.5 rounded-full" style="width: 0%"></div>
             </div>
-            <p class="text-right text-xs text-primary mt-1 font-mono" id="progressText">0%</p>
         </div>
     </div>
 
@@ -65,7 +59,7 @@
             <div class="text-center mb-8">
                 <i class="fas fa-box-open text-5xl text-primary mb-4"></i>
                 <h1 class="text-3xl font-bold text-white">BR Recovery</h1>
-                <p class="text-gray-400">Logística Inteligente</p>
+                <p class="text-gray-400">Sistema Conectado</p>
             </div>
             <form id="loginForm" class="space-y-6">
                 <div>
@@ -76,14 +70,13 @@
                     <label class="block text-sm text-gray-400 mb-1">Senha</label>
                     <input type="password" id="loginPassword" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-primary outline-none" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg transform active:scale-95">ENTRAR</button>
+                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg">ENTRAR</button>
             </form>
         </div>
     </div>
 
     <!-- SISTEMA -->
     <div id="mainSystem" class="hidden flex h-screen">
-        <!-- Sidebar -->
         <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between">
             <div>
                 <div class="p-6 flex items-center gap-3">
@@ -97,8 +90,6 @@
                     <button onclick="navigate('records')" id="nav-records" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-clipboard-list w-5"></i> Registros BR
                     </button>
-                    
-                    <!-- MENUS RESTRITOS (ADM) -->
                     <div id="admMenu" class="hidden">
                         <p class="px-4 mt-4 mb-2 text-xs font-bold text-gray-600 uppercase">Gestão</p>
                         <button onclick="navigate('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
@@ -112,7 +103,7 @@
             </div>
             <div class="p-4 border-t border-gray-800 bg-gray-900">
                 <div class="flex items-center gap-3 p-2">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center font-bold text-white shadow">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-white">
                         <span id="userInitial">U</span>
                     </div>
                     <div class="overflow-hidden">
@@ -120,23 +111,21 @@
                         <p class="text-xs text-gray-400 truncate" id="userRoleDisplay">Cargo</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="mt-3 w-full text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded hover:bg-red-900/20 transition">Sair</button>
+                <button onclick="logout()" class="mt-3 w-full text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded">Sair</button>
             </div>
         </aside>
 
-        <!-- Content -->
         <main class="flex-1 overflow-y-auto bg-gray-900 p-8">
             <div class="max-w-7xl mx-auto space-y-8">
                 
                 <!-- DASHBOARD -->
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
                     <div class="flex justify-between items-center flex-wrap gap-4">
-                        <h2 class="text-2xl font-bold text-white">Painel Financeiro & Operacional</h2>
+                        <h2 class="text-2xl font-bold text-white">Painel Operacional</h2>
                         <div class="flex gap-2">
                             <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
                                 <option value="all">Todo o Período</option>
                                 <option value="month">Este Mês</option>
-                                <option value="30days">Últimos 30 Dias</option>
                             </select>
                             <button onclick="sendEmailReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
                                 <i class="fas fa-envelope"></i> Relatório
@@ -144,60 +133,41 @@
                         </div>
                     </div>
 
-                    <div id="alertBanner" class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-400 animate-pulse">
+                    <div id="alertBanner" class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-400">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span><strong>Atenção:</strong> Taxa de recuperação crítica! Meta: <span id="metaTargetDisplay">0</span>%.</span>
+                        <span><strong>Atenção:</strong> Taxa abaixo da meta (<span id="metaTargetDisplay">0</span>%).</span>
                     </div>
 
-                    <!-- KPIs FINANCEIROS -->
+                    <!-- KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <!-- Card 1 -->
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg hover:border-gray-500 transition">
-                            <div class="flex justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-xs font-bold uppercase">Volume Total</p>
-                                    <h3 class="text-3xl font-bold text-white mt-1" id="kpiTotal">0</h3>
-                                </div>
-                                <div class="bg-gray-800 p-2 rounded text-primary h-fit"><i class="fas fa-box"></i></div>
-                            </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Volume Total</p>
+                            <h3 class="text-3xl font-bold text-white mt-1" id="kpiTotal">0</h3>
                         </div>
-                        
-                        <!-- Card 2 -->
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg hover:border-gray-500 transition">
-                            <div class="flex justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-xs font-bold uppercase">Taxa Recuperação</p>
-                                    <h3 class="text-3xl font-bold text-white mt-1" id="kpiRate">0%</h3>
-                                </div>
-                                <div class="bg-gray-800 p-2 rounded text-blue-400 h-fit"><i class="fas fa-chart-line"></i></div>
-                            </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Taxa Recuperação</p>
+                            <h3 class="text-3xl font-bold text-white mt-1" id="kpiRate">0%</h3>
                         </div>
-
-                        <!-- Card 3: DINHEIRO RECUPERADO -->
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 w-1 h-full bg-green-500"></div>
-                            <p class="text-green-400 text-xs font-bold uppercase"><i class="fas fa-arrow-up"></i> Valor Recuperado</p>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg border-l-4 border-l-green-500">
+                            <p class="text-green-400 text-xs font-bold uppercase">Valor Recuperado</p>
                             <h3 class="text-2xl font-bold text-white mt-2" id="kpiRecoveredValue">R$ 0,00</h3>
-                            <p class="text-xs text-gray-500 mt-1"><span id="kpiRecoveredCount">0</span> pacotes salvos</p>
+                            <p class="text-xs text-gray-500 mt-1"><span id="kpiRecoveredCount">0</span> un.</p>
                         </div>
-
-                        <!-- Card 4: DINHEIRO PERDIDO -->
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 w-1 h-full bg-red-500"></div>
-                            <p class="text-red-400 text-xs font-bold uppercase"><i class="fas fa-arrow-down"></i> Valor Perdido</p>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg border-l-4 border-l-red-500">
+                            <p class="text-red-400 text-xs font-bold uppercase">Valor Perdido</p>
                             <h3 class="text-2xl font-bold text-white mt-2" id="kpiLostValue">R$ 0,00</h3>
-                            <p class="text-xs text-gray-500 mt-1"><span id="kpiLostCount">0</span> pacotes baixados</p>
+                            <p class="text-xs text-gray-500 mt-1"><span id="kpiLostCount">0</span> un.</p>
                         </div>
                     </div>
 
                     <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Evolução de Recuperação (R$)</h3>
+                            <h3 class="text-white font-bold mb-4">Evolução Mensal (R$)</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Status Operacional</h3>
+                            <h3 class="text-white font-bold mb-4">Status</h3>
                             <div class="h-64"><canvas id="chartStatus"></canvas></div>
                         </div>
                     </div>
@@ -206,15 +176,15 @@
                 <!-- REGISTROS -->
                 <div id="view-records" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-white">Gestão de BRs</h2>
+                        <h2 class="text-2xl font-bold text-white">Registros</h2>
                         <button onclick="openRecordModal()" class="bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
-                            <i class="fas fa-plus"></i> Novo Registro
+                            <i class="fas fa-plus"></i> Novo
                         </button>
                     </div>
                     <div class="bg-cardBg p-4 rounded-xl border border-gray-700 flex flex-wrap gap-4">
-                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR, Estação..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white outline-none focus:border-primary">
-                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white outline-none">
-                            <option value="all">Todos os Status</option>
+                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                            <option value="all">Todos</option>
                             <option value="recuperado">Recuperado</option>
                             <option value="perdido">Perdido</option>
                         </select>
@@ -239,12 +209,12 @@
                     </div>
                 </div>
 
-                <!-- USUÁRIOS (ADM) -->
+                <!-- USUÁRIOS -->
                 <div id="view-users" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Usuários</h2>
                         <button onclick="openUserModal()" class="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
-                            <i class="fas fa-user-plus"></i> Novo Usuário
+                            <i class="fas fa-user-plus"></i> Novo
                         </button>
                     </div>
                     <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
@@ -262,7 +232,7 @@
                     </div>
                 </div>
 
-                <!-- CONFIGURAÇÕES (ADM) -->
+                <!-- CONFIGURAÇÕES -->
                 <div id="view-settings" class="hidden animate-fade-in space-y-8">
                     <h2 class="text-2xl font-bold text-white">Configurações</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -270,18 +240,18 @@
                             <h3 class="font-bold text-white mb-4">Categorias</h3>
                             <div class="flex gap-2 mb-4">
                                 <input type="text" id="newCatInput" placeholder="Nova Categoria..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                                <button onclick="addCategory()" class="bg-primary text-white px-3 rounded hover:bg-orange-600"><i class="fas fa-plus"></i></button>
+                                <button onclick="addCategory()" class="bg-primary text-white px-3 rounded"><i class="fas fa-plus"></i></button>
                             </div>
                             <ul id="categoriesList" class="space-y-2 max-h-48 overflow-y-auto"></ul>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="font-bold text-white mb-4">Metas do Dashboard</h3>
+                            <h3 class="font-bold text-white mb-4">Metas</h3>
                             <div class="space-y-4">
                                 <div>
                                     <label class="text-gray-400 block mb-1">Meta de Recuperação (%)</label>
                                     <input type="number" id="metaTargetInput" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
                                 </div>
-                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">Salvar Configurações</button>
+                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">Salvar</button>
                             </div>
                         </div>
                     </div>
@@ -380,35 +350,21 @@
         // --- PROGRESS BAR UTILS ---
         function updateProgress(percent) {
             document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressText').innerText = percent + '%';
         }
 
         // --- CORE ---
         async function apiCall(data = null) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
-            updateProgress(10); // Start
-            
+            updateProgress(10);
             try {
-                // Simula progresso visual (já que fetch não tem progress)
                 let fakeProgress = 10;
-                const timer = setInterval(() => {
-                    if(fakeProgress < 90) {
-                        fakeProgress += Math.random() * 15;
-                        updateProgress(Math.min(90, Math.floor(fakeProgress)));
-                    }
-                }, 200);
-
+                const timer = setInterval(() => { if(fakeProgress < 90) { fakeProgress += 5; updateProgress(fakeProgress); } }, 100);
                 const options = data ? { method: 'POST', body: JSON.stringify(data) } : {};
                 const response = await fetch(API_URL, options);
-                
-                clearInterval(timer);
-                updateProgress(100);
-                
+                clearInterval(timer); updateProgress(100);
                 const json = await response.json();
-                
-                setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 500);
+                setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
                 return json;
-
             } catch (error) {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 Swal.fire('Erro', 'Falha na conexão com Google Sheets.', 'error'); 
@@ -424,7 +380,7 @@
             }
         }
 
-        // --- LOGIN & ACL ---
+        // --- LOGIN ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
@@ -438,16 +394,12 @@
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainSystem').classList.remove('hidden');
-                
                 document.getElementById('userNameDisplay').textContent = currentUser.name;
                 document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
                 document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
                 
-                if(currentUser.role === 'ADM') {
-                    document.getElementById('admMenu').classList.remove('hidden');
-                } else {
-                    document.getElementById('admMenu').classList.add('hidden');
-                }
+                if(currentUser.role === 'ADM') document.getElementById('admMenu').classList.remove('hidden');
+                else document.getElementById('admMenu').classList.add('hidden');
                 
                 navigate('dashboard');
             } else {
@@ -471,57 +423,51 @@
             if(view === 'settings') loadSettings();
         }
 
-        // --- MATEMÁTICA FINANCEIRA SEGURA ---
+        // --- MATEMÁTICA FINANCEIRA BLINDADA ---
         function parseCurrency(value) {
             if (!value) return 0;
-            // Remove tudo que não for número, vírgula ou menos
-            // Ex: "R$ 1.200,50" -> "1200,50" -> 1200.50
-            let str = String(value).replace(/[^\d,-]/g, ''); 
-            // Se tiver vírgula, troca por ponto (padrão JS)
-            str = str.replace(',', '.');
+            // Pega o valor, remove R$, converte para string, troca vírgula por ponto
+            let str = String(value).replace('R$', '').trim();
+            // Se for 1.200,00 (formato brasileiro)
+            if (str.includes(',') && str.includes('.')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes(',')) { // Se for 1200,00
+                str = str.replace(',', '.');
+            }
             return parseFloat(str) || 0;
         }
 
-        // --- DASHBOARD ---
+        // --- DASHBOARD (LÓGICA CORRIGIDA) ---
         function renderDashboard() {
             const filterType = document.getElementById('dashDateFilter').value;
             const now = new Date();
             let recs = localData.records;
 
-            // Filtro Data
             if (filterType === 'month') {
                 recs = recs.filter(r => {
                     const d = new Date(r.date);
                     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
                 });
-            } else if (filterType === '30days') {
-                const limit = new Date(); limit.setDate(limit.getDate() - 30);
-                recs = recs.filter(r => new Date(r.date) >= limit);
             }
 
-            // Cálculos
             const total = recs.length;
-            const recCount = recs.filter(r => r.status === 'recuperado').length;
+            // Correção: Transforma tudo em minúsculo e remove espaços para comparar
+            const recCount = recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').length;
             const lostCount = total - recCount;
             const rate = total ? ((recCount / total) * 100).toFixed(1) : 0;
             
-            // Soma Financeira Separada
-            const recoveredVal = recs.reduce((acc, r) => r.status === 'recuperado' ? acc + parseCurrency(r.cost) : acc, 0);
-            const lostVal = recs.reduce((acc, r) => r.status === 'perdido' ? acc + parseCurrency(r.cost) : acc, 0);
+            // Soma Financeira
+            const recoveredVal = recs.reduce((acc, r) => String(r.status).toLowerCase().trim() === 'recuperado' ? acc + parseCurrency(r.cost) : acc, 0);
+            const lostVal = recs.reduce((acc, r) => String(r.status).toLowerCase().trim() === 'perdido' ? acc + parseCurrency(r.cost) : acc, 0);
 
-            // UI
+            // Atualiza UI
             document.getElementById('kpiTotal').textContent = total;
-            document.getElementById('kpiRecovered').textContent = recCount;
-            document.getElementById('kpiLost').textContent = lostCount;
             document.getElementById('kpiRate').textContent = rate + '%';
-            
             document.getElementById('kpiRecoveredValue').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(recoveredVal);
-            document.getElementById('kpiRecoveredCount').textContent = recCount + ' pacotes';
-            
+            document.getElementById('kpiRecoveredCount').textContent = recCount;
             document.getElementById('kpiLostValue').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(lostVal);
-            document.getElementById('kpiLostCount').textContent = lostCount + ' pacotes';
+            document.getElementById('kpiLostCount').textContent = lostCount;
 
-            // Alerta
             const meta = JSON.parse(localStorage.getItem('brMeta')).target;
             const banner = document.getElementById('alertBanner');
             if(rate < meta && total > 0) {
@@ -535,37 +481,44 @@
         }
 
         function updateCharts(rec, lost, recs) {
+            // Garante que o canvas existe e destrói o anterior
+            const ctxStatus = document.getElementById('chartStatus');
             if(chartInstances.status) chartInstances.status.destroy();
-            chartInstances.status = new Chart(document.getElementById('chartStatus'), {
+            
+            // Gráfico Status (Mesmo se for zero, desenha)
+            chartInstances.status = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: { labels: ['Recuperado', 'Perdido'], datasets: [{ data: [rec, lost], backgroundColor: ['#22c55e', '#ef4444'], borderWidth:0 }] },
                 options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // Agrupar por Mês
+            // Gráfico Evolução (Agrupa por Mês)
+            const ctxEvo = document.getElementById('chartEvolution');
+            if(chartInstances.evo) chartInstances.evo.destroy();
+
             const months = {};
             recs.forEach(r => {
                 if(!r.date) return;
-                const dateKey = String(r.date).substring(0, 7); // YYYY-MM
-                if(dateKey.length < 7) return;
-                const parts = dateKey.split('-');
-                const label = `${parts[1]}/${parts[0]}`; // MM/YYYY
+                let dateKey = String(r.date).substring(0, 7); // Pega YYYY-MM
+                if (dateKey.length < 7) return; 
+                let [y, m] = dateKey.split('-');
+                let label = `${m}/${y}`; // Formata MM/YYYY
                 
                 if(!months[label]) months[label] = 0;
-                if(r.status === 'recuperado') months[label] += parseCurrency(r.cost); // Somar valor monetário
+                // Soma apenas recuperados
+                if(String(r.status).toLowerCase().trim() === 'recuperado') {
+                    months[label] += parseCurrency(r.cost);
+                }
             });
             
-            const labels = Object.keys(months).sort((a,b) => {
-               const [m1,y1] = a.split('/'); const [m2,y2] = b.split('/');
-               return new Date(y1, m1-1) - new Date(y2, m2-1);
-            });
+            const labels = Object.keys(months).sort(); // Ordenação simples
+            const data = labels.map(l => months[l]);
 
-            if(chartInstances.evo) chartInstances.evo.destroy();
-            chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
+            chartInstances.evo = new Chart(ctxEvo, {
                 type: 'line',
                 data: { 
                     labels: labels, 
-                    datasets: [{ label:'Recuperado (R$)', data: labels.map(l => months[l]), borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
+                    datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
                 },
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
             });
@@ -575,9 +528,8 @@
             const total = document.getElementById('kpiTotal').innerText;
             const recVal = document.getElementById('kpiRecoveredValue').innerText;
             const lostVal = document.getElementById('kpiLostValue').innerText;
-            
             const subject = "Relatório BR Recovery";
-            const body = `Resumo Financeiro:\n\n📦 Volume Total: ${total}\n✅ Recuperado: ${recVal}\n❌ Perda: ${lostVal}\n\nGerado automaticamente.`;
+            const body = `Resumo:\n\n📦 Total: ${total}\n✅ Recuperado: ${recVal}\n❌ Perda: ${lostVal}\n\nGerado automaticamente.`;
             window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
         }
 
@@ -593,7 +545,7 @@
 
             recs = recs.filter(r => {
                 return (String(r.br).toLowerCase().includes(term) || String(r.station).toLowerCase().includes(term)) &&
-                       (status === 'all' || r.status === status);
+                       (status === 'all' || String(r.status).toLowerCase().trim() === status);
             });
 
             const tbody = document.getElementById('recordsTableBody');
@@ -604,7 +556,7 @@
             recs.sort((a,b) => new Date(b.date) - new Date(a.date));
 
             recs.forEach(r => {
-                const isRec = r.status === 'recuperado';
+                const isRec = String(r.status).toLowerCase().trim() === 'recuperado';
                 const money = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(parseCurrency(r.cost));
                 
                 let actions = '';
@@ -726,7 +678,7 @@
                 document.getElementById('recCategory').value = r.category;
                 document.getElementById('recEvidence').value = r.evidence || '';
                 const radios = document.getElementsByName('recStatus');
-                for(let rd of radios) if(rd.value === r.status) rd.checked = true;
+                for(let rd of radios) if(rd.value === String(r.status).toLowerCase().trim()) rd.checked = true;
             } else if(currentUser.station !== 'HQ') {
                 document.getElementById('recStation').value = currentUser.station;
             }
