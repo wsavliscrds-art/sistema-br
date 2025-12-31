@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery System - Gold</title>
+    <title>BR Recovery - Enterprise</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- SweetAlert2 (Alertas Bonitos) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         tailwind.config = {
@@ -54,7 +56,7 @@
             <div class="text-center mb-8">
                 <i class="fas fa-box-open text-5xl text-primary mb-4"></i>
                 <h1 class="text-3xl font-bold text-white">BR Recovery</h1>
-                <p class="text-gray-400">Gestão Logística</p>
+                <p class="text-gray-400">Logística Enterprise</p>
             </div>
             <form id="loginForm" class="space-y-6">
                 <div>
@@ -76,7 +78,7 @@
         <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between">
             <div>
                 <div class="p-6 flex items-center gap-3">
-                    <i class="fas fa-truck-loading text-primary text-xl"></i>
+                    <i class="fas fa-cubes text-primary text-xl"></i>
                     <span class="font-bold text-xl text-white">BR Admin</span>
                 </div>
                 <nav class="mt-4 space-y-1 px-2">
@@ -87,9 +89,8 @@
                         <i class="fas fa-clipboard-list w-5"></i> Registros BR
                     </button>
                     
-                    <!-- MENUS RESTRITOS (ADM) -->
                     <div id="admMenu" class="hidden">
-                        <p class="px-4 mt-4 mb-2 text-xs font-bold text-gray-600 uppercase">Administração</p>
+                        <p class="px-4 mt-4 mb-2 text-xs font-bold text-gray-600 uppercase">Gestão</p>
                         <button onclick="navigate('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                             <i class="fas fa-users-cog w-5"></i> Usuários
                         </button>
@@ -119,31 +120,44 @@
                 
                 <!-- DASHBOARD -->
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
-                    <h2 class="text-2xl font-bold text-white">Visão Geral</h2>
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <h2 class="text-2xl font-bold text-white">Visão Geral</h2>
+                        <div class="flex gap-2">
+                            <!-- Filtro de Data -->
+                            <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm">
+                                <option value="all">Todo o Período</option>
+                                <option value="month">Este Mês</option>
+                                <option value="30days">Últimos 30 Dias</option>
+                            </select>
+                            <!-- Botão Relatório Email -->
+                            <button onclick="sendEmailReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
+                                <i class="fas fa-envelope"></i> Relatório E-mail
+                            </button>
+                        </div>
+                    </div>
 
-                    <!-- Alerta de Meta -->
                     <div id="alertBanner" class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-400">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span><strong>Atenção:</strong> A taxa de recuperação está abaixo da meta de <span id="metaTargetDisplay">0</span>%.</span>
+                        <span><strong>Atenção:</strong> Taxa de recuperação abaixo da meta de <span id="metaTargetDisplay">0</span>%.</span>
                     </div>
 
                     <!-- KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Total Registrado</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Total</p>
                             <h3 class="text-3xl font-bold text-white mt-1" id="kpiTotal">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Recuperados</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Recuperadas</p>
                             <h3 class="text-3xl font-bold text-green-400 mt-1" id="kpiRecovered">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Perdidos</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Perdidas</p>
                             <h3 class="text-3xl font-bold text-red-400 mt-1" id="kpiLost">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-1 h-full bg-blue-500"></div>
-                            <p class="text-gray-400 text-xs font-bold uppercase">Custo Total (Perda)</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Custo Total</p>
                             <h3 class="text-2xl font-bold text-white mt-1" id="kpiCost">R$ 0,00</h3>
                         </div>
                     </div>
@@ -151,11 +165,11 @@
                     <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Evolução Mensal (Recuperados)</h3>
+                            <h3 class="text-white font-bold mb-4">Evolução Mensal</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Status Geral</h3>
+                            <h3 class="text-white font-bold mb-4">Status</h3>
                             <div class="h-64"><canvas id="chartStatus"></canvas></div>
                         </div>
                     </div>
@@ -239,7 +253,7 @@
                                     <label class="text-gray-400 block mb-1">Meta de Recuperação (%)</label>
                                     <input type="number" id="metaTargetInput" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
                                 </div>
-                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">Salvar</button>
+                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">Salvar Configurações</button>
                             </div>
                         </div>
                     </div>
@@ -282,6 +296,10 @@
                         <label class="block text-xs text-gray-400 mb-1">Estação</label>
                         <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Ex: SP01">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Evidência (Link/Drive)</label>
+                    <input type="text" id="recEvidence" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-xs" placeholder="Cole o link da foto aqui">
                 </div>
                 <div class="flex gap-4 text-white">
                     <label class="flex items-center gap-2"><input type="radio" name="recStatus" value="recuperado" checked class="accent-green-500"> Recuperado</label>
@@ -339,7 +357,7 @@
                 const response = await fetch(API_URL, options);
                 return await response.json();
             } catch (error) {
-                alert('Erro de conexão. Verifique se a URL está correta e a planilha pública.'); return null;
+                Swal.fire('Erro', 'Falha na conexão com Google Sheets.', 'error'); return null;
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
@@ -356,7 +374,7 @@
         // --- LOGIN & ACL ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Google Apps Script na linha 545!");
+            if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
             
             await initSystem();
             const email = document.getElementById('loginEmail').value;
@@ -368,12 +386,10 @@
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainSystem').classList.remove('hidden');
                 
-                // UI Info
                 document.getElementById('userNameDisplay').textContent = currentUser.name;
                 document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
                 document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
                 
-                // ACL: Mostrar menus apenas para ADM
                 if(currentUser.role === 'ADM') {
                     document.getElementById('admMenu').classList.remove('hidden');
                 } else {
@@ -382,7 +398,7 @@
                 
                 navigate('dashboard');
             } else {
-                alert('Login inválido! Verifique a aba "Usuarios".');
+                Swal.fire('Login Inválido', 'Verifique e-mail e senha.', 'error');
             }
         });
 
@@ -402,24 +418,37 @@
             if(view === 'settings') loadSettings();
         }
 
-        // --- UTILS: MATEMÁTICA FINANCEIRA ---
+        // --- UTILS ---
         function parseCurrency(value) {
             if (typeof value === 'number') return value;
             if (!value) return 0;
-            // Remove R$, espaços e converte 1.000,00 para 1000.00
             let clean = String(value).replace(/[^\d,-]/g, '').replace(',', '.');
             return parseFloat(clean) || 0;
         }
 
         // --- DASHBOARD ---
         function renderDashboard() {
-            const recs = localData.records;
+            // Filtro de Data
+            const filterType = document.getElementById('dashDateFilter').value;
+            const now = new Date();
+            let recs = localData.records;
+
+            if (filterType === 'month') {
+                recs = recs.filter(r => {
+                    if(!r.date) return false;
+                    const d = new Date(r.date);
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                });
+            } else if (filterType === '30days') {
+                const limit = new Date();
+                limit.setDate(limit.getDate() - 30);
+                recs = recs.filter(r => new Date(r.date) >= limit);
+            }
+
             const total = recs.length;
             const rec = recs.filter(r => r.status === 'recuperado').length;
             const lost = total - rec;
             const rate = total ? ((rec / total) * 100).toFixed(1) : 0;
-            
-            // Soma Correta
             const cost = recs.reduce((acc, r) => r.status === 'perdido' ? acc + parseCurrency(r.cost) : acc, 0);
 
             document.getElementById('kpiTotal').textContent = total;
@@ -427,7 +456,6 @@
             document.getElementById('kpiLost').textContent = lost;
             document.getElementById('kpiCost').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(cost);
 
-            // Alerta
             const meta = JSON.parse(localStorage.getItem('brMeta')).target;
             const banner = document.getElementById('alertBanner');
             if(rate < meta && total > 0) {
@@ -437,7 +465,6 @@
                 banner.classList.add('hidden');
             }
 
-            // Charts
             updateCharts(rec, lost, recs);
         }
 
@@ -449,7 +476,6 @@
                 options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // Agrupar por Mês (YYYY-MM)
             const months = {};
             recs.forEach(r => {
                 if(!r.date) return;
@@ -460,7 +486,6 @@
                 if(r.status === 'recuperado') months[key]++;
             });
             
-            // Ordenar Labels
             const labels = Object.keys(months).sort((a,b) => {
                const [m1,y1] = a.split('/'); const [m2,y2] = b.split('/');
                return new Date(y1, m1-1) - new Date(y2, m2-1);
@@ -477,13 +502,24 @@
             });
         }
 
-        // --- REGISTROS & PERMISSÕES (ACL) ---
+        function sendEmailReport() {
+            const total = document.getElementById('kpiTotal').innerText;
+            const rec = document.getElementById('kpiRecovered').innerText;
+            const lost = document.getElementById('kpiLost').innerText;
+            const cost = document.getElementById('kpiCost').innerText;
+            
+            const subject = "Relatório BR Recovery";
+            const body = `Resumo Operacional:\n\n📦 Total: ${total}\n✅ Recuperados: ${rec}\n❌ Perdidos: ${lost}\n💰 Custo Perda: ${cost}\n\nGerado automaticamente.`;
+            
+            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+        }
+
+        // --- REGISTROS ---
         function renderTable() {
             let recs = localData.records;
             const term = document.getElementById('searchFilter').value.toLowerCase();
             const status = document.getElementById('statusFilter').value;
 
-            // Filtro por Papel (Auxiliar só vê o seu ou da sua estação)
             if(currentUser.role === 'Auxiliar') {
                 recs = recs.filter(r => r.station === currentUser.station || r.createdBy == currentUser.id);
             }
@@ -504,20 +540,15 @@
                 const isRec = r.status === 'recuperado';
                 const money = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(parseCurrency(r.cost));
                 
-                // ACL Botões
                 let actions = '';
-                // ADM: Edita e Exclui
                 if(currentUser.role === 'ADM') {
                     actions = `
                         <button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white mr-3"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteRecord(${r.id})" class="text-red-500 hover:text-white"><i class="fas fa-trash"></i></button>
                     `;
-                } 
-                // Analista: Apenas Edita
-                else if (currentUser.role === 'Analista') {
+                } else if (currentUser.role === 'Analista') {
                     actions = `<button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white"><i class="fas fa-edit"></i></button>`;
                 }
-                // Auxiliar: Apenas vê (sem botões)
 
                 tbody.innerHTML += `
                 <tr class="hover:bg-gray-800/50 border-b border-gray-800">
@@ -544,16 +575,21 @@
                 status: document.querySelector('input[name="recStatus"]:checked').value,
                 category: document.getElementById('recCategory').value,
                 station: document.getElementById('recStation').value || 'HQ',
+                evidence: document.getElementById('recEvidence').value,
                 createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
             };
             const res = await apiCall(payload);
-            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); renderDashboard(); alert('Salvo!'); }
+            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); renderDashboard(); Swal.fire('Sucesso', 'Registro Salvo!', 'success'); }
         });
 
         async function deleteRecord(id) {
-            if(confirm('Excluir este registro permanentemente?')) {
+            const result = await Swal.fire({
+                title: 'Tem certeza?', text: "Não será possível reverter!", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sim, excluir!'
+            });
+            if (result.isConfirmed) {
                 const res = await apiCall({ action: 'DELETE_RECORD', id: id });
-                if(res.status === 'success') { await initSystem(); renderTable(); renderDashboard(); }
+                if(res.status === 'success') { await initSystem(); renderTable(); renderDashboard(); Swal.fire('Deletado!', 'Registro removido.', 'success'); }
             }
         }
 
@@ -575,7 +611,7 @@
                 password: '123', role: document.getElementById('uRole').value, station: document.getElementById('uStation').value
             };
             const res = await apiCall(payload);
-            if(res.status === 'success') { await initSystem(); closeModal('userModal'); renderUsers(); alert('Usuário criado (Senha: 123)'); }
+            if(res.status === 'success') { await initSystem(); closeModal('userModal'); renderUsers(); Swal.fire('Sucesso', 'Usuário criado!', 'success'); }
         });
 
         // --- SETTINGS ---
@@ -601,7 +637,7 @@
         }
         function saveSettings() {
             localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value }));
-            alert('Configurações Salvas!'); renderDashboard();
+            Swal.fire('Salvo', 'Configurações atualizadas', 'success'); renderDashboard();
         }
 
         // --- UTILS ---
@@ -618,9 +654,10 @@
                 document.getElementById('recId').value = r.id;
                 document.getElementById('recBr').value = r.br;
                 document.getElementById('recCost').value = r.cost;
-                document.getElementById('recDate').value = r.date; // Ensure YYYY-MM-DD
+                document.getElementById('recDate').value = r.date; 
                 document.getElementById('recStation').value = r.station;
                 document.getElementById('recCategory').value = r.category;
+                document.getElementById('recEvidence').value = r.evidence || '';
                 const radios = document.getElementsByName('recStatus');
                 for(let rd of radios) if(rd.value === r.status) rd.checked = true;
             } else if(currentUser.station !== 'HQ') {
@@ -644,7 +681,7 @@
                    stopScanner();
                },
                (errorMessage) => { }
-           ).catch(err => alert("Erro câmera: " + err));
+           ).catch(err => Swal.fire('Erro Câmera', 'Permita o acesso à câmera.', 'error'));
         }
         function stopScanner() {
            if(html5QrcodeScanner) {
