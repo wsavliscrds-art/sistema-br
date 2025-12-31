@@ -86,7 +86,6 @@
                     <button onclick="navigate('records')" id="nav-records" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-clipboard-list w-5"></i> Registros BR
                     </button>
-                    <!-- ADM ONLY -->
                     <button onclick="navigate('users')" id="nav-users" class="hidden w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-users-cog w-5"></i> Usuários
                     </button>
@@ -138,7 +137,7 @@
                             <h3 class="text-3xl font-bold text-red-400 mt-1" id="kpiLost">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Custo Total</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Custo (Perda)</p>
                             <h3 class="text-2xl font-bold text-white mt-1" id="kpiCost">R$ 0,00</h3>
                         </div>
                     </div>
@@ -146,11 +145,11 @@
                     <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Evolução Mensal (Real)</h3>
+                            <h3 class="text-white font-bold mb-4">Evolução Mensal (Recuperados)</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Status</h3>
+                            <h3 class="text-white font-bold mb-4">Status Geral</h3>
                             <div class="h-64"><canvas id="chartStatus"></canvas></div>
                         </div>
                     </div>
@@ -212,7 +211,7 @@
                     </div>
                 </div>
 
-                <!-- SETTINGS (NOVA ABA) -->
+                <!-- SETTINGS -->
                 <div id="view-settings" class="hidden animate-fade-in space-y-8">
                     <h2 class="text-2xl font-bold text-white">Configurações</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -348,7 +347,7 @@
         // --- LOGIN ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Script na linha 492!");
+            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Script na linha 495!");
             
             await initSystem();
             const email = document.getElementById('loginEmail').value;
@@ -389,7 +388,7 @@
             if(view === 'settings') loadSettings();
         }
 
-        // --- DASHBOARD INTELIGENTE ---
+        // --- DASHBOARD INTELIGENTE CORRIGIDO ---
         function renderDashboard() {
             const recs = localData.records;
             const total = recs.length;
@@ -397,10 +396,15 @@
             const lost = total - rec;
             const rate = total ? ((rec / total) * 100).toFixed(1) : 0;
             
-            // Calculo de Custo Real
+            // Calculo de Custo Real (Correção de formatação R$ 1.000,00)
             const cost = recs.reduce((acc, r) => {
-                let val = String(r.cost).replace(',', '.'); // Trata vírgula
-                return r.status === 'perdido' ? acc + (parseFloat(val) || 0) : acc;
+                if (r.status === 'perdido') {
+                    // Limpa R$, pontos e troca vírgula por ponto
+                    let valStr = String(r.cost).replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                    let val = parseFloat(valStr) || 0;
+                    return acc + val;
+                }
+                return acc;
             }, 0);
 
             document.getElementById('kpiTotal').textContent = total;
@@ -426,25 +430,37 @@
                 options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // Gráfico Evolução Mensal Real
+            // Gráfico Evolução Mensal Real (Correção de Data)
             if(chartInstances.evo) chartInstances.evo.destroy();
             
-            // Agrupar dados por mês
+            // Agrupar dados por mês (MM/YYYY)
             const months = {};
             recs.forEach(r => {
                 if(!r.date) return;
-                const d = new Date(r.date);
-                if(isNaN(d)) return;
-                const key = `${d.getMonth()+1}/${d.getFullYear()}`; // ex: 5/2025
-                if(!months[key]) months[key] = 0;
-                if(r.status === 'recuperado') months[key]++;
+                // O script manda YYYY-MM-DD. Vamos pegar os 7 primeiros chars (YYYY-MM)
+                const dateKey = String(r.date).substring(0, 7); // 2023-10
+                if(dateKey.length < 7) return;
+                
+                // Formatar para o gráfico (10/2023)
+                const parts = dateKey.split('-');
+                const label = `${parts[1]}/${parts[0]}`;
+                
+                if(!months[label]) months[label] = 0;
+                if(r.status === 'recuperado') months[label]++;
             });
+            
+            // Ordenar meses (gambiarra simples para ordenar string MM/YYYY)
+            const labels = Object.keys(months).sort((a, b) => {
+                const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
+                return new Date(y1, m1-1) - new Date(y2, m2-1);
+            });
+            const data = labels.map(l => months[l]);
             
             chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
                 type: 'line',
                 data: { 
-                    labels: Object.keys(months), 
-                    datasets: [{ label:'Recuperados', data: Object.values(months), borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
+                    labels: labels, 
+                    datasets: [{ label:'Recuperados', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
                 },
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
             });
@@ -477,7 +493,7 @@
                 <tr class="hover:bg-gray-800/50 border-b border-gray-800">
                     <td class="px-6 py-4 font-bold text-white font-mono">${r.br}</td>
                     <td class="px-6 py-4 text-xs">${r.category}</td>
-                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(String(r.cost).replace(',','.')).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(String(r.cost).replace('R$','').replace('.','').replace(',','.')).toFixed(2)}</td>
                     <td class="px-6 py-4">${r.station}</td>
                     <td class="px-6 py-4"><span class="${isRec ? 'text-green-400' : 'text-red-400'}">${isRec ? 'Recuperado' : 'Perdido'}</span></td>
                     <td class="px-6 py-4 text-center">
@@ -504,13 +520,13 @@
                 createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
             };
             const res = await apiCall(payload);
-            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); alert('Salvo!'); }
+            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); renderDashboard(); alert('Salvo!'); }
         });
 
         async function deleteRecord(id) {
             if(confirm('Excluir?')) {
                 const res = await apiCall({ action: 'DELETE_RECORD', id: id });
-                if(res.status === 'success') { await initSystem(); renderTable(); }
+                if(res.status === 'success') { await initSystem(); renderTable(); renderDashboard(); }
             }
         }
 
@@ -559,6 +575,7 @@
         function saveSettings() {
             localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value }));
             alert('Salvo!');
+            renderDashboard(); // Atualiza dashboard com nova meta
         }
 
         // --- UTILS ---
