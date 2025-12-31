@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Platinum</title>
+    <title>BR Recovery - Platinum (Login Flex)</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -360,7 +360,7 @@
         // ==========================================================
         //  COLE SUA URL AQUI EM BAIXO
         // ==========================================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbzcQ50QsvLoX_99rkKiynLCkdzednkpbpAV8V15oIFsKFTvwNS2ZNjQEpDYz0F2hjdO/execI"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzcQ50QsvLoX_99rkKiynLCkdzednkpbpAV8V15oIFsKFTvwNS2ZNjQEpDYz0F2hjdO/exec"; 
 
         // --- ESTADO ---
         let currentUser = null;
@@ -418,9 +418,11 @@
             if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
             
             await initSystem();
-            const email = document.getElementById('loginEmail').value.trim();
+            const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
-            const user = localData.users.find(u => String(u.email).toLowerCase() === email.toLowerCase() && String(u.password) === String(pass));
+            
+            // Lógica Relaxada (sem trim nem lowerCase)
+            const user = localData.users.find(u => u.email == email && u.password == pass);
 
             if (user) {
                 currentUser = user;
@@ -539,7 +541,10 @@
 
             chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
                 type: 'line',
-                data: { labels: labels, datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] },
+                data: { 
+                    labels: labels, 
+                    datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
+                },
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}}, maintainAspectRatio: false }
             });
 
@@ -795,4 +800,3 @@
     </script>
 </body>
 </html>
-
