@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery System - Conectado</title>
+    <title>BR Recovery System - Pro</title>
     
-    <!-- Bibliotecas de Estilo e Gráficos -->
+    <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Biblioteca da Câmera (QR Code) -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <script>
@@ -20,7 +19,7 @@
                     colors: {
                         darkBg: '#0f172a',
                         cardBg: '#1e293b',
-                        primary: '#ee4d2d', // Shopee Orange
+                        primary: '#ee4d2d', 
                         secondary: '#2563eb', 
                         accent: '#8b5cf6',
                     }
@@ -34,29 +33,28 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        .disabled-action { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden text-sm">
 
-    <!-- OVERLAY DE CARREGAMENTO (IMPORTANTE) -->
+    <!-- LOADING -->
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div class="text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p class="text-white font-bold animate-pulse">Sincronizando com Nuvem...</p>
+            <p class="text-white font-bold animate-pulse">Sincronizando...</p>
         </div>
     </div>
 
-    <!-- ================= TELA DE LOGIN ================= -->
+    <!-- LOGIN -->
     <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center">
         <div class="absolute inset-0 bg-gray-900/90 backdrop-blur-sm"></div>
         <div class="relative z-10 w-full max-w-md p-8 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 fade-in">
             <div class="text-center mb-8">
                 <i class="fas fa-shipping-fast text-5xl text-primary mb-4"></i>
                 <h1 class="text-3xl font-bold text-white">BR Recovery</h1>
-                <p class="text-gray-400">Sistema Conectado</p>
+                <p class="text-gray-400">Sistema Integrado</p>
             </div>
             <form id="loginForm" class="space-y-6">
                 <div>
@@ -67,17 +65,13 @@
                     <label class="block text-sm text-gray-400 mb-1">Senha</label>
                     <input type="password" id="loginPassword" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-primary outline-none" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg shadow-orange-900/20">
-                    ACESSAR
-                </button>
+                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg">ACESSAR</button>
             </form>
-            <p class="mt-4 text-center text-xs text-gray-500">Dados carregados via Google Sheets</p>
         </div>
     </div>
 
-    <!-- ================= LAYOUT PRINCIPAL ================= -->
+    <!-- SISTEMA -->
     <div id="mainSystem" class="hidden flex h-screen">
-        
         <!-- Sidebar -->
         <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between">
             <div>
@@ -85,7 +79,6 @@
                     <i class="fas fa-box text-primary text-xl"></i>
                     <span class="font-bold text-xl text-white">BR Admin</span>
                 </div>
-                
                 <nav class="mt-4 space-y-1 px-2">
                     <button onclick="navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-chart-pie w-5"></i> Dashboard
@@ -93,17 +86,18 @@
                     <button onclick="navigate('records')" id="nav-records" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-clipboard-list w-5"></i> Registros BR
                     </button>
-                    <!-- Menus Restritos -->
+                    <!-- ADM ONLY -->
                     <button onclick="navigate('users')" id="nav-users" class="hidden w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-users-cog w-5"></i> Usuários
                     </button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="hidden w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                        <i class="fas fa-sliders-h w-5"></i> Configurações
+                    </button>
                 </nav>
             </div>
-
-            <!-- User Profile & Logout -->
             <div class="p-4 border-t border-gray-800 bg-gray-900">
-                <div class="flex items-center gap-3 p-2 rounded-lg">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-red-600 flex items-center justify-center font-bold text-white shadow-md">
+                <div class="flex items-center gap-3 p-2">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-white">
                         <span id="userInitial">U</span>
                     </div>
                     <div class="overflow-hidden">
@@ -111,87 +105,74 @@
                         <p class="text-xs text-gray-400 truncate" id="userRoleDisplay">Cargo</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="mt-3 w-full flex items-center justify-center gap-2 text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded hover:bg-red-900/10 transition">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
+                <button onclick="logout()" class="mt-3 w-full text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded">Sair</button>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto bg-gray-900 relative">
-            <div class="p-8 max-w-7xl mx-auto space-y-8">
+        <!-- Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-900 p-8">
+            <div class="max-w-7xl mx-auto space-y-8">
                 
-                <!-- VIEW: DASHBOARD -->
+                <!-- DASHBOARD -->
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
                     <h2 class="text-2xl font-bold text-white">Visão Geral</h2>
 
-                    <!-- KPI Cards -->
+                    <!-- Alerta de Meta -->
+                    <div id="alertBanner" class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-400">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span><strong>Alerta:</strong> A taxa de recuperação está abaixo da meta (<span id="metaTargetDisplay">0</span>%)</span>
+                    </div>
+
+                    <!-- KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                            <div class="absolute right-0 top-0 h-full w-1 bg-primary"></div>
-                            <p class="text-gray-400 text-xs font-bold uppercase">Total BRs</p>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Total</p>
                             <h3 class="text-3xl font-bold text-white mt-1" id="kpiTotal">0</h3>
                         </div>
-                        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                            <div class="absolute right-0 top-0 h-full w-1 bg-green-500"></div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
                             <p class="text-gray-400 text-xs font-bold uppercase">Recuperadas</p>
                             <h3 class="text-3xl font-bold text-green-400 mt-1" id="kpiRecovered">0</h3>
                         </div>
-                        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                            <div class="absolute right-0 top-0 h-full w-1 bg-red-500"></div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
                             <p class="text-gray-400 text-xs font-bold uppercase">Perdidas</p>
                             <h3 class="text-3xl font-bold text-red-400 mt-1" id="kpiLost">0</h3>
                         </div>
-                        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                            <div class="absolute right-0 top-0 h-full w-1 bg-blue-500"></div>
-                            <p class="text-gray-400 text-xs font-bold uppercase">Financeiro</p>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
+                            <p class="text-gray-400 text-xs font-bold uppercase">Custo Total</p>
                             <h3 class="text-2xl font-bold text-white mt-1" id="kpiCost">R$ 0,00</h3>
                         </div>
                     </div>
 
-                    <!-- Charts -->
+                    <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Evolução Mensal</h3>
+                        <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
+                            <h3 class="text-white font-bold mb-4">Evolução Mensal (Real)</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
-                        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Status Geral</h3>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
+                            <h3 class="text-white font-bold mb-4">Status</h3>
                             <div class="h-64"><canvas id="chartStatus"></canvas></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- VIEW: RECORDS -->
+                <!-- REGISTROS -->
                 <div id="view-records" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Gestão de BRs</h2>
-                        <div class="flex gap-2">
-                            <!-- Botão Novo (Todos veem) -->
-                            <button onclick="openRecordModal()" class="bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg transition">
-                                <i class="fas fa-plus"></i> Novo Registro
-                            </button>
-                        </div>
+                        <button onclick="openRecordModal()" class="bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Novo Registro
+                        </button>
                     </div>
-
-                    <!-- Filter Bar -->
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-wrap gap-4 items-end">
-                        <div class="flex-1">
-                            <label class="text-xs text-gray-500 mb-1 block">Busca</label>
-                            <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR, Nome ou Estação..." class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-primary outline-none">
-                        </div>
-                        <div class="w-40">
-                            <label class="text-xs text-gray-500 mb-1 block">Status</label>
-                            <select id="statusFilter" onchange="renderTable()" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm outline-none">
-                                <option value="all">Todos</option>
-                                <option value="recuperado">Recuperado</option>
-                                <option value="perdido">Perdido</option>
-                            </select>
-                        </div>
+                    <div class="bg-cardBg p-4 rounded-xl border border-gray-700 flex gap-4">
+                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                            <option value="all">Todos</option>
+                            <option value="recuperado">Recuperado</option>
+                            <option value="perdido">Perdido</option>
+                        </select>
                     </div>
-
-                    <!-- Table -->
-                    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+                    <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
                             <thead class="bg-gray-900 text-xs uppercase font-medium text-gray-300">
                                 <tr>
@@ -205,25 +186,18 @@
                             </thead>
                             <tbody id="recordsTableBody" class="divide-y divide-gray-700"></tbody>
                         </table>
-                        <div id="emptyState" class="p-8 text-center hidden">
-                            <p class="text-gray-500">Nenhum registro encontrado.</p>
-                        </div>
                     </div>
                 </div>
 
-                <!-- VIEW: USERS (ADM ONLY) -->
+                <!-- USUÁRIOS -->
                 <div id="view-users" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="text-2xl font-bold text-white">Usuários</h2>
-                            <p class="text-gray-400 text-sm">Gerencie acessos e estações</p>
-                        </div>
-                        <button onclick="openUserModal()" class="bg-accent hover:bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg transition">
-                            <i class="fas fa-user-plus"></i> Novo Usuário
+                        <h2 class="text-2xl font-bold text-white">Usuários</h2>
+                        <button onclick="openUserModal()" class="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                            <i class="fas fa-user-plus"></i> Novo
                         </button>
                     </div>
-                    
-                    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+                    <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
                         <table class="w-full text-left text-sm text-gray-400">
                             <thead class="bg-gray-900 text-xs uppercase font-medium text-gray-300">
                                 <tr>
@@ -237,38 +211,54 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- SETTINGS (NOVA ABA) -->
+                <div id="view-settings" class="hidden animate-fade-in space-y-8">
+                    <h2 class="text-2xl font-bold text-white">Configurações</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
+                            <h3 class="font-bold text-white mb-4">Gerenciar Categorias</h3>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="newCatInput" placeholder="Nova Categoria..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                                <button onclick="addCategory()" class="bg-primary text-white px-3 rounded"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <ul id="categoriesList" class="space-y-2 max-h-48 overflow-y-auto"></ul>
+                        </div>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
+                            <h3 class="font-bold text-white mb-4">Metas & Alertas</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-gray-400 block mb-1">Meta de Recuperação (%)</label>
+                                    <input type="number" id="metaTargetInput" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                                </div>
+                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded">Salvar Configurações</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
-    <!-- ================= MODALS ================= -->
-
-    <!-- Modal Registro (COM CÂMERA) -->
+    <!-- MODAL REGISTRO -->
     <div id="recordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div class="bg-gray-800 rounded-xl p-6 w-full max-w-lg border border-gray-700 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-4" id="modalTitle">Novo Registro</h3>
+            <h3 class="text-xl font-bold text-white mb-4" id="modalTitle">Registro</h3>
             <form id="recordForm" class="space-y-4">
                 <input type="hidden" id="recId">
-                
-                <!-- Input BR com Câmera -->
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">BR ID</label>
+                    <label class="block text-xs text-gray-400 mb-1">BR ID (Use a Câmera)</label>
                     <div class="flex gap-2">
                         <input type="text" id="recBr" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white uppercase font-mono" placeholder="BR..." required>
-                        <button type="button" onclick="startScanner()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 rounded border border-gray-600">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
+                        <button type="button" onclick="startScanner()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 rounded"><i class="fas fa-qrcode"></i></button>
                     </div>
-                    <!-- Área do Vídeo -->
                     <div id="reader" class="mt-2 hidden rounded-lg overflow-hidden border-2 border-primary"></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">Categoria</label>
-                        <select id="recCategory" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                            <option>Eletrônicos</option><option>Moda</option><option>Casa</option><option>Beleza</option>
-                        </select>
+                        <select id="recCategory" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"></select>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">Data</label>
@@ -285,52 +275,34 @@
                         <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Estação">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Status</label>
-                    <div class="flex gap-4">
-                        <label class="text-white"><input type="radio" name="recStatus" value="recuperado" checked> Recuperado</label>
-                        <label class="text-white"><input type="radio" name="recStatus" value="perdido"> Perdido</label>
-                    </div>
+                <div class="flex gap-4 text-white">
+                    <label><input type="radio" name="recStatus" value="recuperado" checked> Recuperado</label>
+                    <label><input type="radio" name="recStatus" value="perdido"> Perdido</label>
                 </div>
-                
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModal('recordModal')" class="px-4 py-2 text-gray-400 hover:text-white">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-orange-600">Salvar</button>
+                    <button type="button" onclick="closeModal('recordModal')" class="text-gray-400 hover:text-white px-4">Cancelar</button>
+                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Usuario -->
+    <!-- MODAL USER -->
     <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700">
             <h3 class="text-xl font-bold text-white mb-4">Novo Usuário</h3>
             <form id="userForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Nome</label>
-                    <input type="text" id="uName" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" required>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">E-mail</label>
-                    <input type="email" id="uEmail" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" required>
-                </div>
+                <input type="text" id="uName" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Nome" required>
+                <input type="email" id="uEmail" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Email" required>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">Perfil</label>
-                        <select id="uRole" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                            <option value="ADM">ADM</option>
-                            <option value="Analista">Analista</option>
-                            <option value="Auxiliar">Auxiliar</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">Estação</label>
-                        <input type="text" id="uStation" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Ex: SP01">
-                    </div>
+                    <select id="uRole" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                        <option value="ADM">ADM</option><option value="Analista">Analista</option><option value="Auxiliar">Auxiliar</option>
+                    </select>
+                    <input type="text" id="uStation" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Estação">
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModal('userModal')" class="text-gray-400 hover:text-white">Cancelar</button>
-                    <button type="submit" class="bg-accent text-white px-4 py-2 rounded hover:bg-violet-600">Criar</button>
+                    <button type="button" onclick="closeModal('userModal')" class="text-gray-400">Cancelar</button>
+                    <button type="submit" class="bg-accent text-white px-4 py-2 rounded">Criar</button>
                 </div>
             </form>
         </div>
@@ -338,34 +310,35 @@
 
     <script>
         // ==========================================================
-        //  CONFIGURAÇÃO DA API (SUA URL JÁ ESTÁ AQUI)
+        //  COLE SUA URL DO GOOGLE AQUI NA LINHA ABAIXO
         // ==========================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbzcQ50QsvLoX_99rkKiynLCkdzednkpbpAV8V15oIFsKFTvwNS2ZNjQEpDYz0F2hjdO/exec"; 
-        
-        // --- ESTADO ---
+
+        // --- ESTADO & CONFIGURAÇÃO ---
         let currentUser = null;
         let localData = { records: [], users: [] };
         let chartInstances = {};
+        
+        // Configs Locais (Categorias e Metas) - Salvos no navegador para não pesar a planilha
+        if(!localStorage.getItem('brCats')) localStorage.setItem('brCats', JSON.stringify(['Eletrônicos', 'Moda', 'Casa', 'Beleza']));
+        if(!localStorage.getItem('brMeta')) localStorage.setItem('brMeta', JSON.stringify({ target: 95 }));
 
-        // --- COMUNICAÇÃO COM GOOGLE ---
+        // --- CONEXÃO ---
         async function apiCall(data = null) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
                 const options = data ? { method: 'POST', body: JSON.stringify(data) } : {};
                 const response = await fetch(API_URL, options);
-                const json = await response.json();
-                return json;
+                return await response.json();
             } catch (error) {
-                console.error(error);
-                alert('Erro de Conexão: Verifique se a URL da API está correta e é pública.');
-                return null;
+                alert('Erro de conexão. Verifique a URL.'); return null;
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
         async function initSystem() {
-            const data = await apiCall(); // Busca tudo (GET)
+            const data = await apiCall(); 
             if(data && data.status === 'success') {
                 localData.records = data.records;
                 localData.users = data.users;
@@ -375,45 +348,36 @@
         // --- LOGIN ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Script na linha 492!");
             
-            // CÓDIGO CORRIGIDO AQUI - SEM A CHAVE PERDIDA
-
+            await initSystem();
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
-
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            await initSystem(); // Baixa dados atualizados da planilha
-
-            // Validação de Login
             const user = localData.users.find(u => u.email === email && String(u.password) === String(pass));
 
             if (user) {
                 currentUser = user;
-                // UI Update
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainSystem').classList.remove('hidden');
                 document.getElementById('userNameDisplay').textContent = currentUser.name;
                 document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
-                document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
+                document.getElementById('userRoleDisplay').textContent = currentUser.role;
                 
-                // Menu ADM
                 if(currentUser.role === 'ADM') {
                     document.getElementById('nav-users').classList.remove('hidden');
+                    document.getElementById('nav-settings').classList.remove('hidden');
                 }
-                
                 navigate('dashboard');
             } else {
-                document.getElementById('loadingOverlay').classList.add('hidden');
                 alert('Login inválido! Verifique a aba "Usuarios" na planilha.');
             }
         });
 
         function logout() { location.reload(); }
 
-        // --- NAVEGAÇÃO ---
         function navigate(view) {
-            ['dashboard', 'records', 'users'].forEach(id => {
-                document.getElementById('view-'+id).classList.add('hidden');
+            ['dashboard', 'records', 'users', 'settings'].forEach(id => {
+                document.getElementById('view-'+id)?.classList.add('hidden');
                 document.getElementById('nav-'+id)?.classList.remove('nav-active', 'bg-gray-800', 'text-white');
             });
             document.getElementById('view-'+view).classList.remove('hidden');
@@ -422,6 +386,68 @@
             if(view === 'dashboard') renderDashboard();
             if(view === 'records') renderTable();
             if(view === 'users') renderUsers();
+            if(view === 'settings') loadSettings();
+        }
+
+        // --- DASHBOARD INTELIGENTE ---
+        function renderDashboard() {
+            const recs = localData.records;
+            const total = recs.length;
+            const rec = recs.filter(r => r.status === 'recuperado').length;
+            const lost = total - rec;
+            const rate = total ? ((rec / total) * 100).toFixed(1) : 0;
+            
+            // Calculo de Custo Real
+            const cost = recs.reduce((acc, r) => {
+                let val = String(r.cost).replace(',', '.'); // Trata vírgula
+                return r.status === 'perdido' ? acc + (parseFloat(val) || 0) : acc;
+            }, 0);
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiRecovered').textContent = rec;
+            document.getElementById('kpiLost').textContent = lost;
+            document.getElementById('kpiCost').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(cost);
+
+            // Alerta de Meta
+            const meta = JSON.parse(localStorage.getItem('brMeta')).target;
+            const banner = document.getElementById('alertBanner');
+            if(rate < meta && total > 0) {
+                banner.classList.remove('hidden');
+                document.getElementById('metaTargetDisplay').textContent = meta;
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            // Gráfico Status
+            if(chartInstances.status) chartInstances.status.destroy();
+            chartInstances.status = new Chart(document.getElementById('chartStatus'), {
+                type: 'doughnut',
+                data: { labels: ['Ok', 'Perda'], datasets: [{ data: [rec, lost], backgroundColor: ['#22c55e', '#ef4444'], borderWidth:0 }] },
+                options: { cutout: '70%', plugins:{legend:{display:false}} }
+            });
+
+            // Gráfico Evolução Mensal Real
+            if(chartInstances.evo) chartInstances.evo.destroy();
+            
+            // Agrupar dados por mês
+            const months = {};
+            recs.forEach(r => {
+                if(!r.date) return;
+                const d = new Date(r.date);
+                if(isNaN(d)) return;
+                const key = `${d.getMonth()+1}/${d.getFullYear()}`; // ex: 5/2025
+                if(!months[key]) months[key] = 0;
+                if(r.status === 'recuperado') months[key]++;
+            });
+            
+            chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
+                type: 'line',
+                data: { 
+                    labels: Object.keys(months), 
+                    datasets: [{ label:'Recuperados', data: Object.values(months), borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
+                },
+                options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
+            });
         }
 
         // --- REGISTROS ---
@@ -440,11 +466,7 @@
 
             const tbody = document.getElementById('recordsTableBody');
             tbody.innerHTML = '';
-            
-            if(recs.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
-                return;
-            }
+            if(recs.length === 0) return document.getElementById('emptyState').classList.remove('hidden');
             document.getElementById('emptyState').classList.add('hidden');
 
             recs.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -454,8 +476,8 @@
                 tbody.innerHTML += `
                 <tr class="hover:bg-gray-800/50 border-b border-gray-800">
                     <td class="px-6 py-4 font-bold text-white font-mono">${r.br}</td>
-                    <td class="px-6 py-4">${r.category}</td>
-                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(r.cost).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-xs">${r.category}</td>
+                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(String(r.cost).replace(',','.')).toFixed(2)}</td>
                     <td class="px-6 py-4">${r.station}</td>
                     <td class="px-6 py-4"><span class="${isRec ? 'text-green-400' : 'text-red-400'}">${isRec ? 'Recuperado' : 'Perdido'}</span></td>
                     <td class="px-6 py-4 text-center">
@@ -466,7 +488,7 @@
             });
         }
 
-        // Salvar
+        // --- CRUD LOGIC ---
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('recId').value;
@@ -481,14 +503,8 @@
                 station: document.getElementById('recStation').value || 'HQ',
                 createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
             };
-
             const res = await apiCall(payload);
-            if(res.status === 'success') {
-                await initSystem();
-                closeModal('recordModal');
-                renderTable();
-                alert('Salvo com sucesso!');
-            }
+            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); alert('Salvo!'); }
         });
 
         async function deleteRecord(id) {
@@ -508,54 +524,53 @@
                     <td class="px-6 py-4">${u.station}</td>
                 </tr>`).join('');
         }
-
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
                 action: 'ADD_USER', id: Date.now(),
-                name: document.getElementById('uName').value,
-                email: document.getElementById('uEmail').value,
-                password: '123',
-                role: document.getElementById('uRole').value,
-                station: document.getElementById('uStation').value
+                name: document.getElementById('uName').value, email: document.getElementById('uEmail').value,
+                password: '123', role: document.getElementById('uRole').value, station: document.getElementById('uStation').value
             };
             const res = await apiCall(payload);
             if(res.status === 'success') { await initSystem(); closeModal('userModal'); renderUsers(); alert('Usuário criado (Senha: 123)'); }
         });
 
-        // --- DASHBOARD ---
-        function renderDashboard() {
-            const recs = localData.records;
-            const total = recs.length;
-            const rec = recs.filter(r => r.status === 'recuperado').length;
-            const lost = total - rec;
-            const cost = recs.reduce((acc, r) => r.status === 'perdido' ? acc + parseFloat(r.cost) : acc, 0);
-
-            document.getElementById('kpiTotal').textContent = total;
-            document.getElementById('kpiRecovered').textContent = rec;
-            document.getElementById('kpiLost').textContent = lost;
-            document.getElementById('kpiCost').textContent = `R$ ${cost.toFixed(2)}`;
-
-            if(chartInstances.status) chartInstances.status.destroy();
-            chartInstances.status = new Chart(document.getElementById('chartStatus'), {
-                type: 'doughnut',
-                data: { labels: ['Ok', 'Perda'], datasets: [{ data: [rec, lost], backgroundColor: ['#22c55e', '#ef4444'], borderWidth:0 }] },
-                options: { cutout: '70%', plugins:{legend:{display:false}} }
-            });
-
-            if(chartInstances.evo) chartInstances.evo.destroy();
-            chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
-                type: 'line',
-                data: { labels: ['1', '2', '3', '4', '5'], datasets: [{ label:'BRs', data: [rec*0.5, rec*0.8, rec, rec*0.9, rec], borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] },
-                options: { plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}} }
-            });
+        // --- SETTINGS ---
+        function loadSettings() {
+            const cats = JSON.parse(localStorage.getItem('brCats'));
+            document.getElementById('categoriesList').innerHTML = cats.map(c => 
+                `<li class="flex justify-between bg-gray-900 p-2 rounded text-gray-300">${c} <button onclick="removeCat('${c}')" class="text-red-500"><i class="fas fa-times"></i></button></li>`
+            ).join('');
+            document.getElementById('metaTargetInput').value = JSON.parse(localStorage.getItem('brMeta')).target;
+        }
+        function addCategory() {
+            const val = document.getElementById('newCatInput').value;
+            if(val) {
+                let cats = JSON.parse(localStorage.getItem('brCats')); cats.push(val);
+                localStorage.setItem('brCats', JSON.stringify(cats));
+                document.getElementById('newCatInput').value = ''; loadSettings();
+            }
+        }
+        function removeCat(val) {
+            let cats = JSON.parse(localStorage.getItem('brCats'));
+            cats = cats.filter(c => c !== val);
+            localStorage.setItem('brCats', JSON.stringify(cats)); loadSettings();
+        }
+        function saveSettings() {
+            localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value }));
+            alert('Salvo!');
         }
 
-        // --- UTILS & SCANNER ---
+        // --- UTILS ---
         function openRecordModal(id=null) {
             document.getElementById('recordForm').reset();
             document.getElementById('recId').value = '';
             document.getElementById('recDate').valueAsDate = new Date();
+            
+            // Popula Categorias
+            const cats = JSON.parse(localStorage.getItem('brCats'));
+            document.getElementById('recCategory').innerHTML = cats.map(c => `<option>${c}</option>`).join('');
+
             if(id) {
                 const r = localData.records.find(x => x.id == id);
                 document.getElementById('recId').value = r.id;
@@ -563,8 +578,7 @@
                 document.getElementById('recCost').value = r.cost;
                 document.getElementById('recDate').value = r.date;
                 document.getElementById('recStation').value = r.station;
-                const radios = document.getElementsByName('recStatus');
-                for(let rd of radios) if(rd.value === r.status) rd.checked = true;
+                document.getElementById('recCategory').value = r.category;
             } else if(currentUser.station !== 'HQ') {
                 document.getElementById('recStation').value = currentUser.station;
             }
@@ -573,15 +587,14 @@
         window.editRecord = openRecordModal;
         function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
         
-        // Lógica da Câmera
+        // SCANNER
         let html5QrcodeScanner;
         function startScanner() {
            const readerDiv = document.getElementById('reader');
            readerDiv.classList.remove('hidden');
            html5QrcodeScanner = new Html5Qrcode("reader");
            html5QrcodeScanner.start(
-               { facingMode: "environment" }, 
-               { fps: 10, qrbox: { width: 250, height: 250 } },
+               { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
                (decodedText) => {
                    document.getElementById('recBr').value = decodedText;
                    new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play();
@@ -590,21 +603,18 @@
                (errorMessage) => { }
            ).catch(err => alert("Erro câmera: " + err));
         }
-
         function stopScanner() {
            if(html5QrcodeScanner) {
                html5QrcodeScanner.stop().then(() => {
                    document.getElementById('reader').classList.add('hidden');
                    html5QrcodeScanner.clear();
-               }).catch(err => console.log(err));
+               });
            }
         }
         function closeModal(id) { 
            if(id === 'recordModal') stopScanner();
            document.getElementById(id).classList.add('hidden'); 
         }
-
     </script>
 </body>
 </html>
-
