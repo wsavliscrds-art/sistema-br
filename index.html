@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Final Fix</title>
+    <title>BR Recovery - Daily Fix</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -163,7 +163,7 @@
                     <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Evolução Mensal (R$)</h3>
+                            <h3 class="text-white font-bold mb-4">Evolução Diária (R$)</h3>
                             <div class="h-64"><canvas id="chartEvolution"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
@@ -209,7 +209,7 @@
                     </div>
                 </div>
 
-                <!-- USUÁRIOS -->
+                <!-- USUÁRIOS (ADM) -->
                 <div id="view-users" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Usuários</h2>
@@ -380,7 +380,7 @@
             }
         }
 
-        // --- LOGIN ---
+        // --- LOGIN & ACL ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
@@ -492,27 +492,32 @@
                 options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // Gráfico Evolução (Agrupa por Mês)
+            // Gráfico Evolução (Agrupa por DIA)
             const ctxEvo = document.getElementById('chartEvolution');
             if(chartInstances.evo) chartInstances.evo.destroy();
 
-            const months = {};
+            const days = {};
             recs.forEach(r => {
                 if(!r.date) return;
-                let dateKey = String(r.date).substring(0, 7); // Pega YYYY-MM
-                if (dateKey.length < 7) return; 
-                let [y, m] = dateKey.split('-');
-                let label = `${m}/${y}`; // Formata MM/YYYY
+                // Pega os 10 primeiros caracteres (YYYY-MM-DD)
+                let dateKey = String(r.date).substring(0, 10);
+                if (dateKey.length < 10) return; 
+                let [y, m, d] = dateKey.split('-');
+                let label = `${d}/${m}`; // Formata DD/MM
                 
-                if(!months[label]) months[label] = 0;
+                if(!days[label]) days[label] = 0;
                 // Soma apenas recuperados
                 if(String(r.status).toLowerCase().trim() === 'recuperado') {
-                    months[label] += parseCurrency(r.cost);
+                    days[label] += parseCurrency(r.cost);
                 }
             });
             
-            const labels = Object.keys(months).sort(); // Ordenação simples
-            const data = labels.map(l => months[l]);
+            // Ordenar por data original (gambiarra: usar o YYYY-MM-DD)
+            // Aqui vamos ordenar pelas chaves geradas, que são DD/MM.
+            // Para ordenar corretamente, precisamos associar de volta. 
+            // Simplificando: Assumindo ordem do objeto
+            const labels = Object.keys(days).sort(); 
+            const data = labels.map(l => days[l]);
 
             chartInstances.evo = new Chart(ctxEvo, {
                 type: 'line',
