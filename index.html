@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery System - Pro</title>
+    <title>BR Recovery System - Gold</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -43,7 +43,7 @@
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div class="text-center">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p class="text-white font-bold animate-pulse">Sincronizando...</p>
+            <p class="text-white font-bold animate-pulse">Processando...</p>
         </div>
     </div>
 
@@ -52,9 +52,9 @@
         <div class="absolute inset-0 bg-gray-900/90 backdrop-blur-sm"></div>
         <div class="relative z-10 w-full max-w-md p-8 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 fade-in">
             <div class="text-center mb-8">
-                <i class="fas fa-shipping-fast text-5xl text-primary mb-4"></i>
+                <i class="fas fa-box-open text-5xl text-primary mb-4"></i>
                 <h1 class="text-3xl font-bold text-white">BR Recovery</h1>
-                <p class="text-gray-400">Sistema Integrado</p>
+                <p class="text-gray-400">Gestão Logística</p>
             </div>
             <form id="loginForm" class="space-y-6">
                 <div>
@@ -65,7 +65,7 @@
                     <label class="block text-sm text-gray-400 mb-1">Senha</label>
                     <input type="password" id="loginPassword" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-primary outline-none" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg">ACESSAR</button>
+                <button type="submit" class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition shadow-lg">ENTRAR</button>
             </form>
         </div>
     </div>
@@ -76,7 +76,7 @@
         <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col justify-between">
             <div>
                 <div class="p-6 flex items-center gap-3">
-                    <i class="fas fa-box text-primary text-xl"></i>
+                    <i class="fas fa-truck-loading text-primary text-xl"></i>
                     <span class="font-bold text-xl text-white">BR Admin</span>
                 </div>
                 <nav class="mt-4 space-y-1 px-2">
@@ -86,17 +86,22 @@
                     <button onclick="navigate('records')" id="nav-records" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
                         <i class="fas fa-clipboard-list w-5"></i> Registros BR
                     </button>
-                    <button onclick="navigate('users')" id="nav-users" class="hidden w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
-                        <i class="fas fa-users-cog w-5"></i> Usuários
-                    </button>
-                    <button onclick="navigate('settings')" id="nav-settings" class="hidden w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
-                        <i class="fas fa-sliders-h w-5"></i> Configurações
-                    </button>
+                    
+                    <!-- MENUS RESTRITOS (ADM) -->
+                    <div id="admMenu" class="hidden">
+                        <p class="px-4 mt-4 mb-2 text-xs font-bold text-gray-600 uppercase">Administração</p>
+                        <button onclick="navigate('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                            <i class="fas fa-users-cog w-5"></i> Usuários
+                        </button>
+                        <button onclick="navigate('settings')" id="nav-settings" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition">
+                            <i class="fas fa-sliders-h w-5"></i> Configurações
+                        </button>
+                    </div>
                 </nav>
             </div>
             <div class="p-4 border-t border-gray-800 bg-gray-900">
                 <div class="flex items-center gap-3 p-2">
-                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-white">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center font-bold text-white shadow">
                         <span id="userInitial">U</span>
                     </div>
                     <div class="overflow-hidden">
@@ -104,7 +109,7 @@
                         <p class="text-xs text-gray-400 truncate" id="userRoleDisplay">Cargo</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="mt-3 w-full text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded">Sair</button>
+                <button onclick="logout()" class="mt-3 w-full text-xs text-red-400 hover:text-red-300 py-2 border border-red-900/30 rounded hover:bg-red-900/20 transition">Sair</button>
             </div>
         </aside>
 
@@ -119,25 +124,26 @@
                     <!-- Alerta de Meta -->
                     <div id="alertBanner" class="hidden bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-400">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span><strong>Alerta:</strong> A taxa de recuperação está abaixo da meta (<span id="metaTargetDisplay">0</span>%)</span>
+                        <span><strong>Atenção:</strong> A taxa de recuperação está abaixo da meta de <span id="metaTargetDisplay">0</span>%.</span>
                     </div>
 
                     <!-- KPIs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Total</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Total Registrado</p>
                             <h3 class="text-3xl font-bold text-white mt-1" id="kpiTotal">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Recuperadas</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Recuperados</p>
                             <h3 class="text-3xl font-bold text-green-400 mt-1" id="kpiRecovered">0</h3>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Perdidas</p>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Perdidos</p>
                             <h3 class="text-3xl font-bold text-red-400 mt-1" id="kpiLost">0</h3>
                         </div>
-                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg">
-                            <p class="text-gray-400 text-xs font-bold uppercase">Custo (Perda)</p>
+                        <div class="bg-cardBg p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 w-1 h-full bg-blue-500"></div>
+                            <p class="text-gray-400 text-xs font-bold uppercase">Custo Total (Perda)</p>
                             <h3 class="text-2xl font-bold text-white mt-1" id="kpiCost">R$ 0,00</h3>
                         </div>
                     </div>
@@ -159,14 +165,14 @@
                 <div id="view-records" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Gestão de BRs</h2>
-                        <button onclick="openRecordModal()" class="bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                        <button onclick="openRecordModal()" class="bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
                             <i class="fas fa-plus"></i> Novo Registro
                         </button>
                     </div>
-                    <div class="bg-cardBg p-4 rounded-xl border border-gray-700 flex gap-4">
-                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                            <option value="all">Todos</option>
+                    <div class="bg-cardBg p-4 rounded-xl border border-gray-700 flex flex-wrap gap-4">
+                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR, Estação..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white outline-none focus:border-primary">
+                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white outline-none">
+                            <option value="all">Todos os Status</option>
                             <option value="recuperado">Recuperado</option>
                             <option value="perdido">Perdido</option>
                         </select>
@@ -185,15 +191,18 @@
                             </thead>
                             <tbody id="recordsTableBody" class="divide-y divide-gray-700"></tbody>
                         </table>
+                        <div id="emptyState" class="p-8 text-center hidden">
+                            <p class="text-gray-500">Nenhum registro encontrado.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- USUÁRIOS -->
+                <!-- USUÁRIOS (ADM) -->
                 <div id="view-users" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Usuários</h2>
-                        <button onclick="openUserModal()" class="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                            <i class="fas fa-user-plus"></i> Novo
+                        <button onclick="openUserModal()" class="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg">
+                            <i class="fas fa-user-plus"></i> Novo Usuário
                         </button>
                     </div>
                     <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
@@ -211,26 +220,26 @@
                     </div>
                 </div>
 
-                <!-- SETTINGS -->
+                <!-- CONFIGURAÇÕES (ADM) -->
                 <div id="view-settings" class="hidden animate-fade-in space-y-8">
                     <h2 class="text-2xl font-bold text-white">Configurações</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="font-bold text-white mb-4">Gerenciar Categorias</h3>
+                            <h3 class="font-bold text-white mb-4">Categorias</h3>
                             <div class="flex gap-2 mb-4">
                                 <input type="text" id="newCatInput" placeholder="Nova Categoria..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                                <button onclick="addCategory()" class="bg-primary text-white px-3 rounded"><i class="fas fa-plus"></i></button>
+                                <button onclick="addCategory()" class="bg-primary text-white px-3 rounded hover:bg-orange-600"><i class="fas fa-plus"></i></button>
                             </div>
                             <ul id="categoriesList" class="space-y-2 max-h-48 overflow-y-auto"></ul>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="font-bold text-white mb-4">Metas & Alertas</h3>
+                            <h3 class="font-bold text-white mb-4">Metas do Dashboard</h3>
                             <div class="space-y-4">
                                 <div>
                                     <label class="text-gray-400 block mb-1">Meta de Recuperação (%)</label>
                                     <input type="number" id="metaTargetInput" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
                                 </div>
-                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded">Salvar Configurações</button>
+                                <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">Salvar</button>
                             </div>
                         </div>
                     </div>
@@ -247,7 +256,7 @@
             <form id="recordForm" class="space-y-4">
                 <input type="hidden" id="recId">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">BR ID (Use a Câmera)</label>
+                    <label class="block text-xs text-gray-400 mb-1">BR ID</label>
                     <div class="flex gap-2">
                         <input type="text" id="recBr" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white uppercase font-mono" placeholder="BR..." required>
                         <button type="button" onclick="startScanner()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 rounded"><i class="fas fa-qrcode"></i></button>
@@ -267,28 +276,28 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">Custo (R$)</label>
-                        <input type="number" step="0.01" id="recCost" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" required>
+                        <input type="number" step="0.01" id="recCost" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="0.00" required>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">Estação</label>
-                        <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Estação">
+                        <input type="text" id="recStation" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Ex: SP01">
                     </div>
                 </div>
                 <div class="flex gap-4 text-white">
-                    <label><input type="radio" name="recStatus" value="recuperado" checked> Recuperado</label>
-                    <label><input type="radio" name="recStatus" value="perdido"> Perdido</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="recStatus" value="recuperado" checked class="accent-green-500"> Recuperado</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="recStatus" value="perdido" class="accent-red-500"> Perdido</label>
                 </div>
-                <div class="flex justify-end gap-2 mt-4">
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
                     <button type="button" onclick="closeModal('recordModal')" class="text-gray-400 hover:text-white px-4">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Salvar</button>
+                    <button type="submit" class="bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded font-bold">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL USER -->
+    <!-- MODAL USER (ADM) -->
     <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-xl">
             <h3 class="text-xl font-bold text-white mb-4">Novo Usuário</h3>
             <form id="userForm" class="space-y-4">
                 <input type="text" id="uName" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Nome" required>
@@ -300,8 +309,8 @@
                     <input type="text" id="uStation" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Estação">
                 </div>
                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" onclick="closeModal('userModal')" class="text-gray-400">Cancelar</button>
-                    <button type="submit" class="bg-accent text-white px-4 py-2 rounded">Criar</button>
+                    <button type="button" onclick="closeModal('userModal')" class="text-gray-400 hover:text-white">Cancelar</button>
+                    <button type="submit" class="bg-secondary text-white px-4 py-2 rounded font-bold">Criar</button>
                 </div>
             </form>
         </div>
@@ -309,20 +318,20 @@
 
     <script>
         // ==========================================================
-        //  COLE SUA URL DO GOOGLE AQUI NA LINHA ABAIXO
+        //  COLE SUA URL AQUI EM BAIXO
         // ==========================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbzcQ50QsvLoX_99rkKiynLCkdzednkpbpAV8V15oIFsKFTvwNS2ZNjQEpDYz0F2hjdO/exec"; 
 
-        // --- ESTADO & CONFIGURAÇÃO ---
+        // --- ESTADO ---
         let currentUser = null;
         let localData = { records: [], users: [] };
         let chartInstances = {};
         
-        // Configs Locais (Categorias e Metas) - Salvos no navegador para não pesar a planilha
+        // Configs
         if(!localStorage.getItem('brCats')) localStorage.setItem('brCats', JSON.stringify(['Eletrônicos', 'Moda', 'Casa', 'Beleza']));
         if(!localStorage.getItem('brMeta')) localStorage.setItem('brMeta', JSON.stringify({ target: 95 }));
 
-        // --- CONEXÃO ---
+        // --- CORE ---
         async function apiCall(data = null) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
@@ -330,7 +339,7 @@
                 const response = await fetch(API_URL, options);
                 return await response.json();
             } catch (error) {
-                alert('Erro de conexão. Verifique a URL.'); return null;
+                alert('Erro de conexão. Verifique se a URL está correta e a planilha pública.'); return null;
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
@@ -344,31 +353,36 @@
             }
         }
 
-        // --- LOGIN ---
+        // --- LOGIN & ACL ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Script na linha 495!");
+            if(API_URL.includes("COLE_SUA_URL")) return alert("Cole a URL do Google Apps Script na linha 545!");
             
             await initSystem();
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
-            const user = localData.users.find(u => u.email === email && String(u.password) === String(pass));
+            const user = localData.users.find(u => u.email.toLowerCase() === email.toLowerCase() && String(u.password) === String(pass));
 
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainSystem').classList.remove('hidden');
+                
+                // UI Info
                 document.getElementById('userNameDisplay').textContent = currentUser.name;
                 document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
-                document.getElementById('userRoleDisplay').textContent = currentUser.role;
+                document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
                 
+                // ACL: Mostrar menus apenas para ADM
                 if(currentUser.role === 'ADM') {
-                    document.getElementById('nav-users').classList.remove('hidden');
-                    document.getElementById('nav-settings').classList.remove('hidden');
+                    document.getElementById('admMenu').classList.remove('hidden');
+                } else {
+                    document.getElementById('admMenu').classList.add('hidden');
                 }
+                
                 navigate('dashboard');
             } else {
-                alert('Login inválido! Verifique a aba "Usuarios" na planilha.');
+                alert('Login inválido! Verifique a aba "Usuarios".');
             }
         });
 
@@ -388,7 +402,16 @@
             if(view === 'settings') loadSettings();
         }
 
-        // --- DASHBOARD INTELIGENTE CORRIGIDO ---
+        // --- UTILS: MATEMÁTICA FINANCEIRA ---
+        function parseCurrency(value) {
+            if (typeof value === 'number') return value;
+            if (!value) return 0;
+            // Remove R$, espaços e converte 1.000,00 para 1000.00
+            let clean = String(value).replace(/[^\d,-]/g, '').replace(',', '.');
+            return parseFloat(clean) || 0;
+        }
+
+        // --- DASHBOARD ---
         function renderDashboard() {
             const recs = localData.records;
             const total = recs.length;
@@ -396,23 +419,15 @@
             const lost = total - rec;
             const rate = total ? ((rec / total) * 100).toFixed(1) : 0;
             
-            // Calculo de Custo Real (Correção de formatação R$ 1.000,00)
-            const cost = recs.reduce((acc, r) => {
-                if (r.status === 'perdido') {
-                    // Limpa R$, pontos e troca vírgula por ponto
-                    let valStr = String(r.cost).replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
-                    let val = parseFloat(valStr) || 0;
-                    return acc + val;
-                }
-                return acc;
-            }, 0);
+            // Soma Correta
+            const cost = recs.reduce((acc, r) => r.status === 'perdido' ? acc + parseCurrency(r.cost) : acc, 0);
 
             document.getElementById('kpiTotal').textContent = total;
             document.getElementById('kpiRecovered').textContent = rec;
             document.getElementById('kpiLost').textContent = lost;
             document.getElementById('kpiCost').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(cost);
 
-            // Alerta de Meta
+            // Alerta
             const meta = JSON.parse(localStorage.getItem('brMeta')).target;
             const banner = document.getElementById('alertBanner');
             if(rate < meta && total > 0) {
@@ -422,7 +437,11 @@
                 banner.classList.add('hidden');
             }
 
-            // Gráfico Status
+            // Charts
+            updateCharts(rec, lost, recs);
+        }
+
+        function updateCharts(rec, lost, recs) {
             if(chartInstances.status) chartInstances.status.destroy();
             chartInstances.status = new Chart(document.getElementById('chartStatus'), {
                 type: 'doughnut',
@@ -430,51 +449,45 @@
                 options: { cutout: '70%', plugins:{legend:{display:false}} }
             });
 
-            // Gráfico Evolução Mensal Real (Correção de Data)
-            if(chartInstances.evo) chartInstances.evo.destroy();
-            
-            // Agrupar dados por mês (MM/YYYY)
+            // Agrupar por Mês (YYYY-MM)
             const months = {};
             recs.forEach(r => {
                 if(!r.date) return;
-                // O script manda YYYY-MM-DD. Vamos pegar os 7 primeiros chars (YYYY-MM)
-                const dateKey = String(r.date).substring(0, 7); // 2023-10
-                if(dateKey.length < 7) return;
-                
-                // Formatar para o gráfico (10/2023)
-                const parts = dateKey.split('-');
-                const label = `${parts[1]}/${parts[0]}`;
-                
-                if(!months[label]) months[label] = 0;
-                if(r.status === 'recuperado') months[label]++;
+                const d = new Date(r.date);
+                if(isNaN(d)) return;
+                const key = `${d.getMonth()+1}/${d.getFullYear()}`;
+                if(!months[key]) months[key] = 0;
+                if(r.status === 'recuperado') months[key]++;
             });
             
-            // Ordenar meses (gambiarra simples para ordenar string MM/YYYY)
-            const labels = Object.keys(months).sort((a, b) => {
-                const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
-                return new Date(y1, m1-1) - new Date(y2, m2-1);
+            // Ordenar Labels
+            const labels = Object.keys(months).sort((a,b) => {
+               const [m1,y1] = a.split('/'); const [m2,y2] = b.split('/');
+               return new Date(y1, m1-1) - new Date(y2, m2-1);
             });
-            const data = labels.map(l => months[l]);
-            
+
+            if(chartInstances.evo) chartInstances.evo.destroy();
             chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
                 type: 'line',
                 data: { 
                     labels: labels, 
-                    datasets: [{ label:'Recuperados', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
+                    datasets: [{ label:'Recuperados', data: labels.map(l => months[l]), borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
                 },
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
             });
         }
 
-        // --- REGISTROS ---
+        // --- REGISTROS & PERMISSÕES (ACL) ---
         function renderTable() {
             let recs = localData.records;
             const term = document.getElementById('searchFilter').value.toLowerCase();
             const status = document.getElementById('statusFilter').value;
 
+            // Filtro por Papel (Auxiliar só vê o seu ou da sua estação)
             if(currentUser.role === 'Auxiliar') {
-                recs = recs.filter(r => r.createdBy == currentUser.id || r.station === currentUser.station);
+                recs = recs.filter(r => r.station === currentUser.station || r.createdBy == currentUser.id);
             }
+
             recs = recs.filter(r => {
                 return (String(r.br).toLowerCase().includes(term) || String(r.station).toLowerCase().includes(term)) &&
                        (status === 'all' || r.status === status);
@@ -489,22 +502,36 @@
 
             recs.forEach(r => {
                 const isRec = r.status === 'recuperado';
+                const money = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(parseCurrency(r.cost));
+                
+                // ACL Botões
+                let actions = '';
+                // ADM: Edita e Exclui
+                if(currentUser.role === 'ADM') {
+                    actions = `
+                        <button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white mr-3"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteRecord(${r.id})" class="text-red-500 hover:text-white"><i class="fas fa-trash"></i></button>
+                    `;
+                } 
+                // Analista: Apenas Edita
+                else if (currentUser.role === 'Analista') {
+                    actions = `<button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white"><i class="fas fa-edit"></i></button>`;
+                }
+                // Auxiliar: Apenas vê (sem botões)
+
                 tbody.innerHTML += `
                 <tr class="hover:bg-gray-800/50 border-b border-gray-800">
                     <td class="px-6 py-4 font-bold text-white font-mono">${r.br}</td>
                     <td class="px-6 py-4 text-xs">${r.category}</td>
-                    <td class="px-6 py-4 text-gray-300">R$ ${parseFloat(String(r.cost).replace('R$','').replace('.','').replace(',','.')).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-gray-300">${money}</td>
                     <td class="px-6 py-4">${r.station}</td>
                     <td class="px-6 py-4"><span class="${isRec ? 'text-green-400' : 'text-red-400'}">${isRec ? 'Recuperado' : 'Perdido'}</span></td>
-                    <td class="px-6 py-4 text-center">
-                        ${currentUser.role !== 'Auxiliar' ? `<button onclick="editRecord(${r.id})" class="text-blue-500 mr-3"><i class="fas fa-edit"></i></button>` : ''}
-                        ${currentUser.role === 'ADM' ? `<button onclick="deleteRecord(${r.id})" class="text-red-500"><i class="fas fa-trash"></i></button>` : ''}
-                    </td>
+                    <td class="px-6 py-4 text-center">${actions}</td>
                 </tr>`;
             });
         }
 
-        // --- CRUD LOGIC ---
+        // --- CRUD ---
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('recId').value;
@@ -524,7 +551,7 @@
         });
 
         async function deleteRecord(id) {
-            if(confirm('Excluir?')) {
+            if(confirm('Excluir este registro permanentemente?')) {
                 const res = await apiCall({ action: 'DELETE_RECORD', id: id });
                 if(res.status === 'success') { await initSystem(); renderTable(); renderDashboard(); }
             }
@@ -574,8 +601,7 @@
         }
         function saveSettings() {
             localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value }));
-            alert('Salvo!');
-            renderDashboard(); // Atualiza dashboard com nova meta
+            alert('Configurações Salvas!'); renderDashboard();
         }
 
         // --- UTILS ---
@@ -584,7 +610,6 @@
             document.getElementById('recId').value = '';
             document.getElementById('recDate').valueAsDate = new Date();
             
-            // Popula Categorias
             const cats = JSON.parse(localStorage.getItem('brCats'));
             document.getElementById('recCategory').innerHTML = cats.map(c => `<option>${c}</option>`).join('');
 
@@ -593,9 +618,11 @@
                 document.getElementById('recId').value = r.id;
                 document.getElementById('recBr').value = r.br;
                 document.getElementById('recCost').value = r.cost;
-                document.getElementById('recDate').value = r.date;
+                document.getElementById('recDate').value = r.date; // Ensure YYYY-MM-DD
                 document.getElementById('recStation').value = r.station;
                 document.getElementById('recCategory').value = r.category;
+                const radios = document.getElementsByName('recStatus');
+                for(let rd of radios) if(rd.value === r.status) rd.checked = true;
             } else if(currentUser.station !== 'HQ') {
                 document.getElementById('recStation').value = currentUser.station;
             }
@@ -604,7 +631,6 @@
         window.editRecord = openRecordModal;
         function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
         
-        // SCANNER
         let html5QrcodeScanner;
         function startScanner() {
            const readerDiv = document.getElementById('reader');
