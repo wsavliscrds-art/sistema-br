@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Platinum</title>
+    <title>BR Recovery - Platinum (Otimizado)</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,8 @@
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
         <div class="w-full max-w-md p-6 text-center">
             <i class="fas fa-satellite-dish text-primary text-4xl mb-4 animate-bounce"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Carregando Dados...</h3>
+            <h3 class="text-xl font-bold text-white mb-2">Carregando Base de Dados...</h3>
+            <p class="text-gray-400 mb-2 text-xs">Processando registros...</p>
             <div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="progress-bar bg-primary h-2.5 rounded-full" style="width: 0%"></div>
             </div>
@@ -183,7 +184,7 @@
                         </div>
                     </div>
 
-                    <!-- Gráficos Linha 2 (NOVOS) -->
+                    <!-- Gráficos Linha 2 -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
                             <h3 class="text-white font-bold mb-4">Recuperados por Categoria</h3>
@@ -196,7 +197,7 @@
                     </div>
                 </div>
 
-                <!-- REGISTROS -->
+                <!-- REGISTROS (OTIMIZADO) -->
                 <div id="view-records" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Registros</h2>
@@ -205,29 +206,35 @@
                         </button>
                     </div>
                     <div class="bg-cardBg p-4 rounded-xl border border-gray-700 flex flex-wrap gap-4">
-                        <input type="text" id="searchFilter" onkeyup="renderTable()" placeholder="Buscar BR..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
-                        <select id="statusFilter" onchange="renderTable()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                        <input type="text" id="searchFilter" onkeyup="resetPageAndRender()" placeholder="Buscar BR..." class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
+                        <select id="statusFilter" onchange="resetPageAndRender()" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white">
                             <option value="all">Todos</option>
                             <option value="recuperado">Recuperado</option>
                             <option value="perdido">Perdido</option>
                         </select>
                     </div>
                     <div class="bg-cardBg rounded-xl border border-gray-700 overflow-hidden shadow-lg">
-                        <table class="w-full text-left text-sm text-gray-400">
-                            <thead class="bg-gray-900 text-xs uppercase font-medium text-gray-300">
-                                <tr>
-                                    <th class="px-6 py-4">BR ID</th>
-                                    <th class="px-6 py-4">Categoria</th>
-                                    <th class="px-6 py-4">Valor</th>
-                                    <th class="px-6 py-4">Estação</th>
-                                    <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recordsTableBody" class="divide-y divide-gray-700"></tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-gray-400">
+                                <thead class="bg-gray-900 text-xs uppercase font-medium text-gray-300">
+                                    <tr>
+                                        <th class="px-6 py-4">BR ID</th>
+                                        <th class="px-6 py-4">Categoria</th>
+                                        <th class="px-6 py-4">Valor</th>
+                                        <th class="px-6 py-4">Estação</th>
+                                        <th class="px-6 py-4">Status</th>
+                                        <th class="px-6 py-4 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recordsTableBody" class="divide-y divide-gray-700"></tbody>
+                            </table>
+                        </div>
                         <div id="emptyState" class="p-8 text-center hidden">
                             <p class="text-gray-500">Nenhum registro encontrado.</p>
+                        </div>
+                        <!-- PAGINAÇÃO -->
+                        <div id="paginationControls" class="p-4 flex justify-between items-center bg-gray-800/50 border-t border-gray-700">
+                            <!-- Injetado via JS -->
                         </div>
                     </div>
                 </div>
@@ -366,6 +373,10 @@
         let localData = { records: [], users: [] };
         let chartInstances = {};
         
+        // --- PAGINAÇÃO (OTIMIZAÇÃO) ---
+        let currentPage = 1;
+        const rowsPerPage = 50; // Renderiza apenas 50 por vez
+
         // Configs
         if(!localStorage.getItem('brCats')) localStorage.setItem('brCats', JSON.stringify(['Eletrônicos', 'Moda', 'Casa', 'Beleza']));
         if(!localStorage.getItem('brMeta')) localStorage.setItem('brMeta', JSON.stringify({ target: 95 }));
@@ -396,11 +407,31 @@
         }
 
         async function initSystem() {
+            // Tenta carregar do cache para ser mais rápido
+            const cached = localStorage.getItem('brCache');
+            if(cached) {
+                const parsed = JSON.parse(cached);
+                localData = parsed;
+                populateStationFilter();
+                // Verifica se dados são recentes (ex: menos de 10 min), senão atualiza em background
+                if(Date.now() - (parsed.timestamp || 0) > 600000) {
+                     updateInBackground();
+                }
+            } else {
+                await updateInBackground();
+            }
+        }
+
+        async function updateInBackground() {
             const data = await apiCall(); 
             if(data && data.status === 'success') {
                 localData.records = data.records;
                 localData.users = data.users;
-                populateStationFilter(); // Popula o filtro ao iniciar
+                // Salva no cache com timestamp
+                localStorage.setItem('brCache', JSON.stringify({ ...localData, timestamp: Date.now() }));
+                populateStationFilter();
+                if(document.getElementById('view-dashboard').classList.contains('hidden') === false) renderDashboard();
+                if(document.getElementById('view-records').classList.contains('hidden') === false) renderTable();
             }
         }
 
@@ -411,7 +442,7 @@
                 stations.map(s => `<option value="${s}">${s}</option>`).join('');
         }
 
-        // --- LOGIN & ACL (SIMPLIFICADO) ---
+        // --- LOGIN & ACL ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
@@ -420,7 +451,6 @@
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
             
-            // Comparação simples (sem trim, sem lowercase)
             const user = localData.users.find(u => u.email == email && u.password == pass);
 
             if (user) {
@@ -451,12 +481,11 @@
             document.getElementById('nav-'+view)?.classList.add('nav-active', 'bg-gray-800', 'text-white');
             
             if(view === 'dashboard') renderDashboard();
-            if(view === 'records') renderTable();
+            if(view === 'records') { currentPage = 1; renderTable(); }
             if(view === 'users') renderUsers();
             if(view === 'settings') loadSettings();
         }
 
-        // --- MATEMÁTICA FINANCEIRA BLINDADA ---
         function parseCurrency(value) {
             if (!value) return 0;
             let str = String(value).replace('R$', '').trim();
@@ -465,19 +494,16 @@
             return parseFloat(str) || 0;
         }
 
-        // --- DASHBOARD ATUALIZADO ---
+        // --- DASHBOARD (Mantido igual) ---
         function renderDashboard() {
             const dateFilter = document.getElementById('dashDateFilter').value;
             const stationFilter = document.getElementById('dashStationFilter').value;
             const now = new Date();
             let recs = localData.records;
 
-            // Filtro de Estação
             if (stationFilter !== 'all') {
                 recs = recs.filter(r => r.station === stationFilter);
             }
-
-            // Filtro de Data
             if (dateFilter === 'month') {
                 recs = recs.filter(r => {
                     const d = new Date(r.date);
@@ -490,11 +516,9 @@
             const lostCount = total - recCount;
             const rate = total ? ((recCount / total) * 100).toFixed(1) : 0;
             
-            // Soma Financeira
             const recoveredVal = recs.reduce((acc, r) => String(r.status).toLowerCase().trim() === 'recuperado' ? acc + parseCurrency(r.cost) : acc, 0);
             const lostVal = recs.reduce((acc, r) => String(r.status).toLowerCase().trim() === 'perdido' ? acc + parseCurrency(r.cost) : acc, 0);
 
-            // Atualiza UI
             document.getElementById('kpiTotal').textContent = total;
             document.getElementById('kpiRate').textContent = rate + '%';
             document.getElementById('kpiRecoveredValue').textContent = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(recoveredVal);
@@ -515,7 +539,7 @@
         }
 
         function updateCharts(rec, lost, recs) {
-            // 1. Gráfico Status (Pizza)
+            // Otimização: Destruir gráficos anteriores se existirem
             if(chartInstances.status) chartInstances.status.destroy();
             chartInstances.status = new Chart(document.getElementById('chartStatus'), {
                 type: 'doughnut',
@@ -523,7 +547,6 @@
                 options: { cutout: '70%', plugins:{legend:{display:false}}, maintainAspectRatio: false }
             });
 
-            // 2. Gráfico Evolução Diária (Linha)
             if(chartInstances.evo) chartInstances.evo.destroy();
             const days = {};
             recs.forEach(r => {
@@ -547,62 +570,38 @@
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}}, maintainAspectRatio: false }
             });
 
-            // 3. Gráfico por Categoria (Barras) - NOVO
             if(chartInstances.category) chartInstances.category.destroy();
             const catStats = {};
             recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').forEach(r => {
                 let cat = r.category || 'Outros';
-                catStats[cat] = (catStats[cat] || 0) + 1; // Contagem de volume
+                catStats[cat] = (catStats[cat] || 0) + 1;
             });
             
             chartInstances.category = new Chart(document.getElementById('chartCategory'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(catStats),
-                    datasets: [{
-                        label: 'Volume Recuperado',
-                        data: Object.values(catStats),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4
-                    }]
+                    datasets: [{ label: 'Volume Recuperado', data: Object.values(catStats), backgroundColor: '#3b82f6', borderRadius: 4 }]
                 },
-                options: { 
-                    plugins: { legend: { display: false } }, 
-                    scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } },
-                    maintainAspectRatio: false
-                }
+                options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } }, maintainAspectRatio: false }
             });
 
-            // 4. Gráfico Ranking Operadores (Barras Horizontais) - NOVO
             if(chartInstances.topUsers) chartInstances.topUsers.destroy();
             const userStats = {};
             recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').forEach(r => {
-                // Tenta achar o nome pelo ID createdBy
                 const creator = localData.users.find(u => u.id == r.createdBy);
                 const name = creator ? creator.name.split(' ')[0] : 'Admin/Outro';
                 userStats[name] = (userStats[name] || 0) + 1;
             });
-
-            // Ordenar Top 5
             const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
             chartInstances.topUsers = new Chart(document.getElementById('chartTopUsers'), {
                 type: 'bar',
                 data: {
                     labels: sortedUsers.map(i => i[0]),
-                    datasets: [{
-                        label: 'Pacotes Salvos',
-                        data: sortedUsers.map(i => i[1]),
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
-                    }]
+                    datasets: [{ label: 'Pacotes Salvos', data: sortedUsers.map(i => i[1]), backgroundColor: '#10b981', borderRadius: 4 }]
                 },
-                options: { 
-                    indexAxis: 'y', // Barra Horizontal
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: '#334155' } }, y: { grid: { display: false } } },
-                    maintainAspectRatio: false
-                }
+                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#334155' } }, y: { grid: { display: false } } }, maintainAspectRatio: false }
             });
         }
 
@@ -615,12 +614,19 @@
             window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
         }
 
-        // --- REGISTROS ---
+        // --- REGISTROS (RENDERIZAÇÃO OTIMIZADA) ---
+        function resetPageAndRender() {
+            currentPage = 1;
+            renderTable();
+        }
+
         function renderTable() {
             let recs = localData.records;
             const term = document.getElementById('searchFilter').value.toLowerCase();
             const status = document.getElementById('statusFilter').value;
+            const tbody = document.getElementById('recordsTableBody');
 
+            // 1. Filtragem (Em memória é rápido)
             if(currentUser.role === 'Auxiliar') {
                 recs = recs.filter(r => r.station === currentUser.station || r.createdBy == currentUser.id);
             }
@@ -630,14 +636,25 @@
                        (status === 'all' || String(r.status).toLowerCase().trim() === status);
             });
 
-            const tbody = document.getElementById('recordsTableBody');
-            tbody.innerHTML = '';
-            if(recs.length === 0) return document.getElementById('emptyState').classList.remove('hidden');
-            document.getElementById('emptyState').classList.add('hidden');
-
+            // Ordenação
             recs.sort((a,b) => new Date(b.date) - new Date(a.date));
 
-            recs.forEach(r => {
+            const totalItems = recs.length;
+            if(totalItems === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('paginationControls').innerHTML = '';
+                return;
+            }
+            document.getElementById('emptyState').classList.add('hidden');
+
+            // 2. Paginação (Evita renderizar 8k linhas)
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedRecs = recs.slice(startIndex, endIndex);
+
+            // 3. Montagem de HTML em lote (Performance)
+            const htmlRows = paginatedRecs.map(r => {
                 const isRec = String(r.status).toLowerCase().trim() === 'recuperado';
                 const money = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(parseCurrency(r.cost));
                 
@@ -651,7 +668,7 @@
                     actions = `<button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white"><i class="fas fa-edit"></i></button>`;
                 }
 
-                tbody.innerHTML += `
+                return `
                 <tr class="hover:bg-gray-800/50 border-b border-gray-800">
                     <td class="px-6 py-4 font-bold text-white font-mono">${r.br}</td>
                     <td class="px-6 py-4 text-xs">${r.category}</td>
@@ -660,7 +677,37 @@
                     <td class="px-6 py-4"><span class="${isRec ? 'text-green-400' : 'text-red-400'}">${isRec ? 'Recuperado' : 'Perdido'}</span></td>
                     <td class="px-6 py-4 text-center">${actions}</td>
                 </tr>`;
-            });
+            }).join('');
+
+            tbody.innerHTML = htmlRows;
+            renderPaginationControls(totalItems);
+        }
+
+        function renderPaginationControls(totalItems) {
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            const controls = document.getElementById('paginationControls');
+            
+            controls.innerHTML = `
+                <span class="text-gray-400 text-sm">
+                    Página <span class="text-white font-bold">${currentPage}</span> de ${totalPages} 
+                    <span class="text-xs ml-2 text-gray-500">(${totalItems} registros)</span>
+                </span>
+                <div class="flex gap-2">
+                    <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+                        Próxima <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderTable();
+            // Scroll suave para o topo da tabela
+            document.querySelector('#view-records').scrollIntoView({behavior: 'smooth'});
         }
 
         // --- CRUD ---
@@ -680,7 +727,7 @@
                 createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
             };
             const res = await apiCall(payload);
-            if(res.status === 'success') { await initSystem(); closeModal('recordModal'); renderTable(); renderDashboard(); Swal.fire('Sucesso', 'Registro Salvo!', 'success'); }
+            if(res.status === 'success') { await updateInBackground(); closeModal('recordModal'); renderTable(); renderDashboard(); Swal.fire('Sucesso', 'Registro Salvo!', 'success'); }
         });
 
         async function deleteRecord(id) {
@@ -690,7 +737,7 @@
             });
             if (result.isConfirmed) {
                 const res = await apiCall({ action: 'DELETE_RECORD', id: id });
-                if(res.status === 'success') { await initSystem(); renderTable(); renderDashboard(); Swal.fire('Deletado!', 'Registro removido.', 'success'); }
+                if(res.status === 'success') { await updateInBackground(); renderTable(); renderDashboard(); Swal.fire('Deletado!', 'Registro removido.', 'success'); }
             }
         }
 
@@ -712,7 +759,7 @@
                 password: '123', role: document.getElementById('uRole').value, station: document.getElementById('uStation').value
             };
             const res = await apiCall(payload);
-            if(res.status === 'success') { await initSystem(); closeModal('userModal'); renderUsers(); Swal.fire('Sucesso', 'Usuário criado!', 'success'); }
+            if(res.status === 'success') { await updateInBackground(); closeModal('userModal'); renderUsers(); Swal.fire('Sucesso', 'Usuário criado!', 'success'); }
         });
 
         // --- SETTINGS ---
