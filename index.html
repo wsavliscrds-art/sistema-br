@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Platinum (Otimizado)</title>
+    <title>BR Recovery - Platinum (Auto Sync)</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,16 +37,19 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .progress-bar { transition: width 0.4s ease; }
+        
+        /* Animação do ícone de Sync */
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .sync-active { animation: spin-slow 1s linear infinite; color: #ee4d2d; }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden text-sm">
 
-    <!-- LOADING -->
+    <!-- LOADING FULLSCREEN (Apenas inicial) -->
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/95 backdrop-blur-sm">
         <div class="w-full max-w-md p-6 text-center">
             <i class="fas fa-satellite-dish text-primary text-4xl mb-4 animate-bounce"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Carregando Base de Dados...</h3>
-            <p class="text-gray-400 mb-2 text-xs">Processando registros...</p>
+            <h3 class="text-xl font-bold text-white mb-2">Conectando...</h3>
             <div class="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                 <div id="progressBar" class="progress-bar bg-primary h-2.5 rounded-full" style="width: 0%"></div>
             </div>
@@ -116,22 +119,26 @@
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto bg-gray-900 p-8">
-            <div class="max-w-7xl mx-auto space-y-8">
+        <main class="flex-1 overflow-y-auto bg-gray-900 p-8 relative">
+            <!-- Indicador de Sync -->
+            <div class="absolute top-4 right-8 flex items-center gap-2 text-xs text-gray-500">
+                <i id="syncIcon" class="fas fa-sync-alt"></i>
+                <span id="lastSyncText">Atualizado agora</span>
+            </div>
+
+            <div class="max-w-7xl mx-auto space-y-8 mt-4">
                 
                 <!-- DASHBOARD -->
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
                     <div class="flex justify-between items-center flex-wrap gap-4">
                         <h2 class="text-2xl font-bold text-white">Painel Operacional</h2>
                         <div class="flex gap-2 items-center">
-                            <!-- Filtro Estação -->
                             <div class="relative">
                                 <i class="fas fa-building absolute left-3 top-2.5 text-gray-400"></i>
                                 <select id="dashStationFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
                                     <option value="all">Todas as Estações</option>
                                 </select>
                             </div>
-                            <!-- Filtro Data -->
                             <div class="relative">
                                 <i class="fas fa-calendar absolute left-3 top-2.5 text-gray-400"></i>
                                 <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
@@ -172,7 +179,7 @@
                         </div>
                     </div>
 
-                    <!-- Gráficos Linha 1 -->
+                    <!-- Gráficos -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-cardBg p-6 rounded-xl border border-gray-700">
                             <h3 class="text-white font-bold mb-4">Evolução Diária (R$)</h3>
@@ -184,14 +191,13 @@
                         </div>
                     </div>
 
-                    <!-- Gráficos Linha 2 -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
                             <h3 class="text-white font-bold mb-4">Recuperados por Categoria</h3>
                             <div class="h-64"><canvas id="chartCategory"></canvas></div>
                         </div>
                         <div class="bg-cardBg p-6 rounded-xl border border-gray-700">
-                            <h3 class="text-white font-bold mb-4">Top Recuperadores (Usuários)</h3>
+                            <h3 class="text-white font-bold mb-4">Top Recuperadores</h3>
                             <div class="h-64"><canvas id="chartTopUsers"></canvas></div>
                         </div>
                     </div>
@@ -232,14 +238,11 @@
                         <div id="emptyState" class="p-8 text-center hidden">
                             <p class="text-gray-500">Nenhum registro encontrado.</p>
                         </div>
-                        <!-- PAGINAÇÃO -->
-                        <div id="paginationControls" class="p-4 flex justify-between items-center bg-gray-800/50 border-t border-gray-700">
-                            <!-- Injetado via JS -->
-                        </div>
+                        <div id="paginationControls" class="p-4 flex justify-between items-center bg-gray-800/50 border-t border-gray-700"></div>
                     </div>
                 </div>
 
-                <!-- USUÁRIOS (ADM) -->
+                <!-- USUÁRIOS -->
                 <div id="view-users" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-2xl font-bold text-white">Usuários</h2>
@@ -341,7 +344,7 @@
         </div>
     </div>
 
-    <!-- MODAL USER (ADM) -->
+    <!-- MODAL USER -->
     <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-xl">
             <h3 class="text-xl font-bold text-white mb-4">Novo Usuário</h3>
@@ -372,105 +375,161 @@
         let currentUser = null;
         let localData = { records: [], users: [] };
         let chartInstances = {};
-        
-        // --- PAGINAÇÃO (OTIMIZAÇÃO) ---
         let currentPage = 1;
-        const rowsPerPage = 50; // Renderiza apenas 50 por vez
+        const rowsPerPage = 50; 
+        let syncInterval = null; // Controle do timer
 
-        // Configs
+        // Configs Iniciais
         if(!localStorage.getItem('brCats')) localStorage.setItem('brCats', JSON.stringify(['Eletrônicos', 'Moda', 'Casa', 'Beleza']));
         if(!localStorage.getItem('brMeta')) localStorage.setItem('brMeta', JSON.stringify({ target: 95 }));
 
-        // --- PROGRESS BAR UTILS ---
-        function updateProgress(percent) {
-            document.getElementById('progressBar').style.width = percent + '%';
-        }
-
         // --- CORE ---
-        async function apiCall(data = null) {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            updateProgress(10);
+        // Agora aceita parametro 'silent' para não mostrar loading
+        async function apiCall(data = null, silent = false) {
+            if(!silent) {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                document.getElementById('progressBar').style.width = '10%';
+            }
+            
             try {
+                // Indicador visual discreto de sync
+                if(silent) document.getElementById('syncIcon').classList.add('sync-active');
+
                 let fakeProgress = 10;
-                const timer = setInterval(() => { if(fakeProgress < 90) { fakeProgress += 5; updateProgress(fakeProgress); } }, 100);
+                let timer;
+                if(!silent) {
+                     timer = setInterval(() => { if(fakeProgress < 90) { fakeProgress += 5; document.getElementById('progressBar').style.width = fakeProgress + '%'; } }, 100);
+                }
+
                 const options = data ? { method: 'POST', body: JSON.stringify(data) } : {};
                 const response = await fetch(API_URL, options);
-                clearInterval(timer); updateProgress(100);
+                
+                if(!silent) { clearInterval(timer); document.getElementById('progressBar').style.width = '100%'; }
+
                 const json = await response.json();
-                setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+                
+                if(!silent) setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 300);
+                if(silent) {
+                    document.getElementById('syncIcon').classList.remove('sync-active');
+                    document.getElementById('lastSyncText').textContent = 'Atualizado: ' + new Date().toLocaleTimeString();
+                }
+
                 return json;
             } catch (error) {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                Swal.fire('Erro', 'Falha na conexão com Google Sheets.', 'error'); 
+                if(!silent) document.getElementById('loadingOverlay').classList.add('hidden');
+                if(silent) document.getElementById('syncIcon').classList.remove('sync-active');
+                if(!silent) Swal.fire('Erro', 'Falha na conexão.', 'error'); 
                 return null;
             }
         }
 
         async function initSystem() {
-            // Tenta carregar do cache para ser mais rápido
+            // Tenta carregar do cache primeiro (instantâneo)
             const cached = localStorage.getItem('brCache');
+            
+            // Verifica se tem sessão salva (Persistência de Login)
+            const savedSession = localStorage.getItem('brUserSession');
+            
             if(cached) {
                 const parsed = JSON.parse(cached);
                 localData = parsed;
                 populateStationFilter();
-                // Verifica se dados são recentes (ex: menos de 10 min), senão atualiza em background
-                if(Date.now() - (parsed.timestamp || 0) > 600000) {
-                     updateInBackground();
-                }
-            } else {
-                await updateInBackground();
             }
+
+            // Se tem usuário salvo, restaura sessão e inicia sync
+            if (savedSession && !currentUser) {
+                restoreSession(JSON.parse(savedSession));
+            }
+
+            // Busca dados novos
+            await updateInBackground(false); // False = mostra loading na primeira vez
         }
 
-        async function updateInBackground() {
-            const data = await apiCall(); 
+        // Função que roda em background
+        async function updateInBackground(silent = true) {
+            const data = await apiCall(null, silent); 
             if(data && data.status === 'success') {
                 localData.records = data.records;
                 localData.users = data.users;
-                // Salva no cache com timestamp
                 localStorage.setItem('brCache', JSON.stringify({ ...localData, timestamp: Date.now() }));
-                populateStationFilter();
-                if(document.getElementById('view-dashboard').classList.contains('hidden') === false) renderDashboard();
-                if(document.getElementById('view-records').classList.contains('hidden') === false) renderTable();
+                
+                // Se a sessão estiver ativa, atualiza UI
+                if(currentUser) {
+                    populateStationFilter();
+                    // Atualiza a tela que estiver visível
+                    if(document.getElementById('view-dashboard').classList.contains('hidden') === false) renderDashboard();
+                    if(document.getElementById('view-records').classList.contains('hidden') === false) renderTable();
+                }
             }
         }
 
-        function populateStationFilter() {
-            const stations = [...new Set(localData.records.map(r => r.station))].filter(Boolean).sort();
-            const select = document.getElementById('dashStationFilter');
-            select.innerHTML = '<option value="all">Todas as Estações</option>' + 
-                stations.map(s => `<option value="${s}">${s}</option>`).join('');
+        // Inicia o loop de 60 segundos
+        function startAutoSync() {
+            if(syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(() => {
+                if(currentUser) {
+                    console.log("Sincronizando...");
+                    updateInBackground(true); // True = silencioso
+                }
+            }, 60000); // 60000ms = 60 segundos
         }
 
-        // --- LOGIN & ACL ---
+        function restoreSession(user) {
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainSystem').classList.remove('hidden');
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+            document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
+            document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
+            
+            if(currentUser.role === 'ADM') document.getElementById('admMenu').classList.remove('hidden');
+            else document.getElementById('admMenu').classList.add('hidden');
+            
+            navigate('dashboard');
+            startAutoSync(); // Começa o timer
+        }
+
+        // --- LOGIN ---
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(API_URL.includes("COLE_SUA_URL")) return Swal.fire('Atenção', 'Cole a URL do Google Apps Script no código!', 'warning');
             
-            await initSystem();
+            // Garante que temos dados para validar
+            if(localData.users.length === 0) await updateInBackground(false);
+
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPassword').value;
             
             const user = localData.users.find(u => u.email == email && u.password == pass);
 
             if (user) {
-                currentUser = user;
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainSystem').classList.remove('hidden');
-                document.getElementById('userNameDisplay').textContent = currentUser.name;
-                document.getElementById('userInitial').textContent = currentUser.name.charAt(0);
-                document.getElementById('userRoleDisplay').textContent = `${currentUser.role} | ${currentUser.station}`;
-                
-                if(currentUser.role === 'ADM') document.getElementById('admMenu').classList.remove('hidden');
-                else document.getElementById('admMenu').classList.add('hidden');
-                
-                navigate('dashboard');
+                // Salva sessão no LocalStorage para não perder ao dar F5
+                localStorage.setItem('brUserSession', JSON.stringify(user));
+                restoreSession(user);
             } else {
                 Swal.fire('Login Inválido', 'Verifique e-mail e senha.', 'error');
             }
         });
 
-        function logout() { location.reload(); }
+        function logout() { 
+            localStorage.removeItem('brUserSession'); // Limpa sessão
+            location.reload(); 
+        }
+
+        // Inicializa ao abrir a página
+        initSystem();
+
+        // ----------------------------------------------------
+        // Funções de UI (Mantidas Otimizadas)
+        // ----------------------------------------------------
+
+        function populateStationFilter() {
+            const currentVal = document.getElementById('dashStationFilter').value; // Mantém seleção
+            const stations = [...new Set(localData.records.map(r => r.station))].filter(Boolean).sort();
+            const select = document.getElementById('dashStationFilter');
+            select.innerHTML = '<option value="all">Todas as Estações</option>' + 
+                stations.map(s => `<option value="${s}">${s}</option>`).join('');
+            select.value = currentVal; // Restaura valor
+        }
 
         function navigate(view) {
             ['dashboard', 'records', 'users', 'settings'].forEach(id => {
@@ -494,16 +553,13 @@
             return parseFloat(str) || 0;
         }
 
-        // --- DASHBOARD (Mantido igual) ---
         function renderDashboard() {
             const dateFilter = document.getElementById('dashDateFilter').value;
             const stationFilter = document.getElementById('dashStationFilter').value;
             const now = new Date();
             let recs = localData.records;
 
-            if (stationFilter !== 'all') {
-                recs = recs.filter(r => r.station === stationFilter);
-            }
+            if (stationFilter !== 'all') { recs = recs.filter(r => r.station === stationFilter); }
             if (dateFilter === 'month') {
                 recs = recs.filter(r => {
                     const d = new Date(r.date);
@@ -539,7 +595,6 @@
         }
 
         function updateCharts(rec, lost, recs) {
-            // Otimização: Destruir gráficos anteriores se existirem
             if(chartInstances.status) chartInstances.status.destroy();
             chartInstances.status = new Chart(document.getElementById('chartStatus'), {
                 type: 'doughnut',
@@ -563,26 +618,18 @@
 
             chartInstances.evo = new Chart(document.getElementById('chartEvolution'), {
                 type: 'line',
-                data: { 
-                    labels: labels, 
-                    datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] 
-                },
+                data: { labels: labels, datasets: [{ label:'Recuperado (R$)', data: data, borderColor:'#ee4d2d', backgroundColor:'rgba(238,77,45,0.1)', fill:true }] },
                 options: { plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}}, maintainAspectRatio: false }
             });
 
             if(chartInstances.category) chartInstances.category.destroy();
             const catStats = {};
             recs.filter(r => String(r.status).toLowerCase().trim() === 'recuperado').forEach(r => {
-                let cat = r.category || 'Outros';
-                catStats[cat] = (catStats[cat] || 0) + 1;
+                let cat = r.category || 'Outros'; catStats[cat] = (catStats[cat] || 0) + 1;
             });
-            
             chartInstances.category = new Chart(document.getElementById('chartCategory'), {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(catStats),
-                    datasets: [{ label: 'Volume Recuperado', data: Object.values(catStats), backgroundColor: '#3b82f6', borderRadius: 4 }]
-                },
+                data: { labels: Object.keys(catStats), datasets: [{ label: 'Volume', data: Object.values(catStats), backgroundColor: '#3b82f6', borderRadius: 4 }] },
                 options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } }, maintainAspectRatio: false }
             });
 
@@ -594,13 +641,9 @@
                 userStats[name] = (userStats[name] || 0) + 1;
             });
             const sortedUsers = Object.entries(userStats).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
             chartInstances.topUsers = new Chart(document.getElementById('chartTopUsers'), {
                 type: 'bar',
-                data: {
-                    labels: sortedUsers.map(i => i[0]),
-                    datasets: [{ label: 'Pacotes Salvos', data: sortedUsers.map(i => i[1]), backgroundColor: '#10b981', borderRadius: 4 }]
-                },
+                data: { labels: sortedUsers.map(i => i[0]), datasets: [{ label: 'Pacotes', data: sortedUsers.map(i => i[1]), backgroundColor: '#10b981', borderRadius: 4 }] },
                 options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#334155' } }, y: { grid: { display: false } } }, maintainAspectRatio: false }
             });
         }
@@ -608,17 +651,11 @@
         function sendEmailReport() {
             const total = document.getElementById('kpiTotal').innerText;
             const recVal = document.getElementById('kpiRecoveredValue').innerText;
-            const lostVal = document.getElementById('kpiLostValue').innerText;
-            const subject = "Relatório BR Recovery - Platinum";
-            const body = `Resumo:\n\n📦 Total: ${total}\n✅ Recuperado: ${recVal}\n❌ Perda: ${lostVal}\n\nGerado automaticamente.`;
-            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+            const body = `Resumo:\n\n📦 Total: ${total}\n✅ Recuperado: ${recVal}\n\nGerado automaticamente.`;
+            window.open(`mailto:?subject=Relatorio&body=${encodeURIComponent(body)}`);
         }
 
-        // --- REGISTROS (RENDERIZAÇÃO OTIMIZADA) ---
-        function resetPageAndRender() {
-            currentPage = 1;
-            renderTable();
-        }
+        function resetPageAndRender() { currentPage = 1; renderTable(); }
 
         function renderTable() {
             let recs = localData.records;
@@ -626,7 +663,6 @@
             const status = document.getElementById('statusFilter').value;
             const tbody = document.getElementById('recordsTableBody');
 
-            // 1. Filtragem (Em memória é rápido)
             if(currentUser.role === 'Auxiliar') {
                 recs = recs.filter(r => r.station === currentUser.station || r.createdBy == currentUser.id);
             }
@@ -636,7 +672,6 @@
                        (status === 'all' || String(r.status).toLowerCase().trim() === status);
             });
 
-            // Ordenação
             recs.sort((a,b) => new Date(b.date) - new Date(a.date));
 
             const totalItems = recs.length;
@@ -648,22 +683,17 @@
             }
             document.getElementById('emptyState').classList.add('hidden');
 
-            // 2. Paginação (Evita renderizar 8k linhas)
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
             const paginatedRecs = recs.slice(startIndex, endIndex);
 
-            // 3. Montagem de HTML em lote (Performance)
             const htmlRows = paginatedRecs.map(r => {
                 const isRec = String(r.status).toLowerCase().trim() === 'recuperado';
                 const money = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(parseCurrency(r.cost));
                 
                 let actions = '';
                 if(currentUser.role === 'ADM') {
-                    actions = `
-                        <button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white mr-3"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteRecord(${r.id})" class="text-red-500 hover:text-white"><i class="fas fa-trash"></i></button>
-                    `;
+                    actions = `<button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white mr-3"><i class="fas fa-edit"></i></button><button onclick="deleteRecord(${r.id})" class="text-red-500 hover:text-white"><i class="fas fa-trash"></i></button>`;
                 } else if (currentUser.role === 'Analista') {
                     actions = `<button onclick="editRecord(${r.id})" class="text-blue-500 hover:text-white"><i class="fas fa-edit"></i></button>`;
                 }
@@ -686,31 +716,18 @@
         function renderPaginationControls(totalItems) {
             const totalPages = Math.ceil(totalItems / rowsPerPage);
             const controls = document.getElementById('paginationControls');
-            
             controls.innerHTML = `
-                <span class="text-gray-400 text-sm">
-                    Página <span class="text-white font-bold">${currentPage}</span> de ${totalPages} 
-                    <span class="text-xs ml-2 text-gray-500">(${totalItems} registros)</span>
-                </span>
+                <span class="text-gray-400 text-sm">Página <span class="text-white font-bold">${currentPage}</span> de ${totalPages} <span class="text-xs ml-2 text-gray-500">(${totalItems} registros)</span></span>
                 <div class="flex gap-2">
-                    <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </button>
-                    <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
-                        Próxima <i class="fas fa-chevron-right ml-1"></i>
-                    </button>
+                    <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 transition"><i class="fas fa-chevron-left"></i> Anterior</button>
+                    <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-30 transition">Próxima <i class="fas fa-chevron-right ml-1"></i></button>
                 </div>
             `;
         }
 
-        function changePage(delta) {
-            currentPage += delta;
-            renderTable();
-            // Scroll suave para o topo da tabela
-            document.querySelector('#view-records').scrollIntoView({behavior: 'smooth'});
-        }
+        function changePage(delta) { currentPage += delta; renderTable(); document.querySelector('#view-records').scrollIntoView({behavior: 'smooth'}); }
 
-        // --- CRUD ---
+        // --- FORMS & ACTIONS ---
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('recId').value;
@@ -726,22 +743,18 @@
                 evidence: document.getElementById('recEvidence').value,
                 createdBy: id ? (localData.records.find(r=>r.id==id)?.createdBy) : currentUser.id
             };
-            const res = await apiCall(payload);
-            if(res.status === 'success') { await updateInBackground(); closeModal('recordModal'); renderTable(); renderDashboard(); Swal.fire('Sucesso', 'Registro Salvo!', 'success'); }
+            const res = await apiCall(payload, false);
+            if(res.status === 'success') { await updateInBackground(false); closeModal('recordModal'); renderTable(); renderDashboard(); Swal.fire('Sucesso', 'Registro Salvo!', 'success'); }
         });
 
         async function deleteRecord(id) {
-            const result = await Swal.fire({
-                title: 'Tem certeza?', text: "Não será possível reverter!", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sim, excluir!'
-            });
+            const result = await Swal.fire({ title: 'Tem certeza?', text: "Não será possível reverter!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sim, excluir!' });
             if (result.isConfirmed) {
-                const res = await apiCall({ action: 'DELETE_RECORD', id: id });
-                if(res.status === 'success') { await updateInBackground(); renderTable(); renderDashboard(); Swal.fire('Deletado!', 'Registro removido.', 'success'); }
+                const res = await apiCall({ action: 'DELETE_RECORD', id: id }, false);
+                if(res.status === 'success') { await updateInBackground(false); renderTable(); renderDashboard(); Swal.fire('Deletado!', 'Registro removido.', 'success'); }
             }
         }
 
-        // --- USERS ---
         function renderUsers() {
             document.getElementById('usersTableBody').innerHTML = localData.users.map(u => `
                 <tr class="hover:bg-gray-800 border-b border-gray-800">
@@ -753,50 +766,29 @@
         }
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                action: 'ADD_USER', id: Date.now(),
-                name: document.getElementById('uName').value, email: document.getElementById('uEmail').value,
-                password: '123', role: document.getElementById('uRole').value, station: document.getElementById('uStation').value
-            };
-            const res = await apiCall(payload);
-            if(res.status === 'success') { await updateInBackground(); closeModal('userModal'); renderUsers(); Swal.fire('Sucesso', 'Usuário criado!', 'success'); }
+            const payload = { action: 'ADD_USER', id: Date.now(), name: document.getElementById('uName').value, email: document.getElementById('uEmail').value, password: '123', role: document.getElementById('uRole').value, station: document.getElementById('uStation').value };
+            const res = await apiCall(payload, false);
+            if(res.status === 'success') { await updateInBackground(false); closeModal('userModal'); renderUsers(); Swal.fire('Sucesso', 'Usuário criado!', 'success'); }
         });
 
-        // --- SETTINGS ---
         function loadSettings() {
             const cats = JSON.parse(localStorage.getItem('brCats'));
-            document.getElementById('categoriesList').innerHTML = cats.map(c => 
-                `<li class="flex justify-between bg-gray-900 p-2 rounded text-gray-300">${c} <button onclick="removeCat('${c}')" class="text-red-500"><i class="fas fa-times"></i></button></li>`
-            ).join('');
+            document.getElementById('categoriesList').innerHTML = cats.map(c => `<li class="flex justify-between bg-gray-900 p-2 rounded text-gray-300">${c} <button onclick="removeCat('${c}')" class="text-red-500"><i class="fas fa-times"></i></button></li>`).join('');
             document.getElementById('metaTargetInput').value = JSON.parse(localStorage.getItem('brMeta')).target;
         }
         function addCategory() {
             const val = document.getElementById('newCatInput').value;
-            if(val) {
-                let cats = JSON.parse(localStorage.getItem('brCats')); cats.push(val);
-                localStorage.setItem('brCats', JSON.stringify(cats));
-                document.getElementById('newCatInput').value = ''; loadSettings();
-            }
+            if(val) { let cats = JSON.parse(localStorage.getItem('brCats')); cats.push(val); localStorage.setItem('brCats', JSON.stringify(cats)); document.getElementById('newCatInput').value = ''; loadSettings(); }
         }
-        function removeCat(val) {
-            let cats = JSON.parse(localStorage.getItem('brCats'));
-            cats = cats.filter(c => c !== val);
-            localStorage.setItem('brCats', JSON.stringify(cats)); loadSettings();
-        }
-        function saveSettings() {
-            localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value }));
-            Swal.fire('Salvo', 'Configurações atualizadas', 'success'); renderDashboard();
-        }
+        function removeCat(val) { let cats = JSON.parse(localStorage.getItem('brCats')); cats = cats.filter(c => c !== val); localStorage.setItem('brCats', JSON.stringify(cats)); loadSettings(); }
+        function saveSettings() { localStorage.setItem('brMeta', JSON.stringify({ target: document.getElementById('metaTargetInput').value })); Swal.fire('Salvo', 'Configurações atualizadas', 'success'); renderDashboard(); }
 
-        // --- UTILS ---
         function openRecordModal(id=null) {
             document.getElementById('recordForm').reset();
             document.getElementById('recId').value = '';
             document.getElementById('recDate').valueAsDate = new Date();
-            
             const cats = JSON.parse(localStorage.getItem('brCats'));
             document.getElementById('recCategory').innerHTML = cats.map(c => `<option>${c}</option>`).join('');
-
             if(id) {
                 const r = localData.records.find(x => x.id == id);
                 document.getElementById('recId').value = r.id;
@@ -808,9 +800,7 @@
                 document.getElementById('recEvidence').value = r.evidence || '';
                 const radios = document.getElementsByName('recStatus');
                 for(let rd of radios) if(rd.value === String(r.status).toLowerCase().trim()) rd.checked = true;
-            } else if(currentUser.station !== 'HQ') {
-                document.getElementById('recStation').value = currentUser.station;
-            }
+            } else if(currentUser.station !== 'HQ') { document.getElementById('recStation').value = currentUser.station; }
             document.getElementById('recordModal').classList.remove('hidden');
         }
         window.editRecord = openRecordModal;
@@ -818,31 +808,12 @@
         
         let html5QrcodeScanner;
         function startScanner() {
-           const readerDiv = document.getElementById('reader');
-           readerDiv.classList.remove('hidden');
+           const readerDiv = document.getElementById('reader'); readerDiv.classList.remove('hidden');
            html5QrcodeScanner = new Html5Qrcode("reader");
-           html5QrcodeScanner.start(
-               { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
-               (decodedText) => {
-                   document.getElementById('recBr').value = decodedText;
-                   new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play();
-                   stopScanner();
-               },
-               (errorMessage) => { }
-           ).catch(err => Swal.fire('Erro Câmera', 'Permita o acesso à câmera.', 'error'));
+           html5QrcodeScanner.start( { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => { document.getElementById('recBr').value = decodedText; new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play(); stopScanner(); }, (errorMessage) => { } ).catch(err => Swal.fire('Erro Câmera', 'Permita o acesso à câmera.', 'error'));
         }
-        function stopScanner() {
-           if(html5QrcodeScanner) {
-               html5QrcodeScanner.stop().then(() => {
-                   document.getElementById('reader').classList.add('hidden');
-                   html5QrcodeScanner.clear();
-               });
-           }
-        }
-        function closeModal(id) { 
-           if(id === 'recordModal') stopScanner();
-           document.getElementById(id).classList.add('hidden'); 
-        }
+        function stopScanner() { if(html5QrcodeScanner) { html5QrcodeScanner.stop().then(() => { document.getElementById('reader').classList.add('hidden'); html5QrcodeScanner.clear(); }); } }
+        function closeModal(id) { if(id === 'recordModal') stopScanner(); document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
