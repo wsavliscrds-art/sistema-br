@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BR Recovery - Platinum (Auto Sync)</title>
+    <title>BR Recovery - Platinum (Filtro Data)</title>
     
     <!-- Bibliotecas -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -132,20 +132,34 @@
                 <div id="view-dashboard" class="animate-fade-in space-y-6">
                     <div class="flex justify-between items-center flex-wrap gap-4">
                         <h2 class="text-2xl font-bold text-white">Painel Operacional</h2>
-                        <div class="flex gap-2 items-center">
+                        <div class="flex flex-wrap gap-2 items-center">
+                            
+                            <!-- Filtro Estação -->
                             <div class="relative">
                                 <i class="fas fa-building absolute left-3 top-2.5 text-gray-400"></i>
                                 <select id="dashStationFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
                                     <option value="all">Todas as Estações</option>
                                 </select>
                             </div>
+
+                            <!-- Filtro Data -->
                             <div class="relative">
                                 <i class="fas fa-calendar absolute left-3 top-2.5 text-gray-400"></i>
-                                <select id="dashDateFilter" onchange="renderDashboard()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
+                                <select id="dashDateFilter" onchange="toggleCustomDate()" class="bg-gray-800 border border-gray-600 rounded-lg pl-8 pr-3 py-2 text-white text-sm focus:border-primary outline-none">
                                     <option value="all">Todo o Período</option>
                                     <option value="month">Este Mês</option>
+                                    <option value="custom">Personalizado</option> <!-- Nova Opção -->
                                 </select>
                             </div>
+
+                            <!-- Campos de Data Customizada (Ocultos por padrão) -->
+                            <div id="customDateContainer" class="hidden flex gap-2 items-center animate-fade-in bg-gray-800 p-1 rounded-lg border border-gray-600">
+                                <input type="date" id="dashStartDate" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-xs outline-none focus:border-primary">
+                                <span class="text-gray-400 text-xs">até</span>
+                                <input type="date" id="dashEndDate" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-xs outline-none focus:border-primary">
+                                <button onclick="renderDashboard()" class="bg-primary hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"><i class="fas fa-check"></i></button>
+                            </div>
+
                             <button onclick="sendEmailReport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
                                 <i class="fas fa-envelope"></i>
                             </button>
@@ -553,18 +567,54 @@
             return parseFloat(str) || 0;
         }
 
+        // --- Lógica de Filtro Customizado ---
+        function toggleCustomDate() {
+            const filterVal = document.getElementById('dashDateFilter').value;
+            const customContainer = document.getElementById('customDateContainer');
+            
+            if (filterVal === 'custom') {
+                customContainer.classList.remove('hidden');
+            } else {
+                customContainer.classList.add('hidden');
+                renderDashboard(); // Se trocou para "Mês" ou "Tudo", renderiza logo
+            }
+        }
+
         function renderDashboard() {
             const dateFilter = document.getElementById('dashDateFilter').value;
             const stationFilter = document.getElementById('dashStationFilter').value;
             const now = new Date();
             let recs = localData.records;
 
-            if (stationFilter !== 'all') { recs = recs.filter(r => r.station === stationFilter); }
+            // Filtro Estação
+            if (stationFilter !== 'all') { 
+                recs = recs.filter(r => r.station === stationFilter); 
+            }
+
+            // Filtro de Data
             if (dateFilter === 'month') {
                 recs = recs.filter(r => {
                     const d = new Date(r.date);
                     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
                 });
+            } else if (dateFilter === 'custom') {
+                const startDateVal = document.getElementById('dashStartDate').value;
+                const endDateVal = document.getElementById('dashEndDate').value;
+
+                if (startDateVal && endDateVal) {
+                    // Normalizar datas para comparação correta
+                    const start = new Date(startDateVal); start.setHours(0,0,0,0);
+                    const end = new Date(endDateVal); end.setHours(23,59,59,999);
+
+                    recs = recs.filter(r => {
+                        // Ajustar timezone do registro (assumindo YYYY-MM-DD no banco)
+                        const d = new Date(r.date);
+                        // Compensa timezone simples (opcional, ajustando apenas horas para evitar dia errado)
+                        d.setHours(12,0,0,0); 
+                        
+                        return d >= start && d <= end;
+                    });
+                }
             }
 
             const total = recs.length;
